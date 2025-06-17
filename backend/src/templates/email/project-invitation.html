@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Invitation - {{projectName}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .invitation-icon {
+            text-align: center;
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .greeting h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .greeting p {
+            font-size: 16px;
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .project-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 6px solid #6c5ce7;
+        }
+        
+        .project-name {
+            font-size: 24px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+        
+        .project-description {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+        
+        .project-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .detail-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .detail-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .detail-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .inviter-info {
+            background-color: #e8f4fd;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .inviter-info h3 {
+            color: #0066cc;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .inviter-name {
+            font-size: 20px;
+            color: #0d47a1;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .inviter-role {
+            font-size: 14px;
+            color: #1976d2;
+            opacity: 0.8;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            border: 2px dashed #6c5ce7;
+        }
+        
+        .cta-section h3 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 15px 30px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 140px;
+        }
+        
+        .btn-accept {
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+            color: white;
+        }
+        
+        .btn-decline {
+            background: white;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .role-info {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+        }
+        
+        .role-info h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .role-info p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .footer p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .footer .company-info {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .email-container {
+                border-radius: 0;
+                margin: 0;
+            }
+            
+            .header, .content, .footer {
+                padding: 20px;
+            }
+            
+            .project-details {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>Project Invitation</h1>
+            <p>You've been invited to collaborate</p>
+        </div>
+        
+        <div class="content">
+            <div class="invitation-icon">🎯</div>
+            
+            <div class="greeting">
+                <h2>Hello {{inviteeName}}!</h2>
+                <p>You've been invited to join an exciting new project. We'd love to have you on the team!</p>
+            </div>
+            
+            <div class="inviter-info">
+                <h3>👤 Invited by</h3>
+                <div class="inviter-name">{{inviterName}}</div>
+                <div class="inviter-role">{{inviterRole}}</div>
+            </div>
+            
+            <div class="project-card">
+                <div class="project-name">{{projectName}}</div>
+                <div class="project-description">{{projectDescription}}</div>
+                
+                <div class="project-details">
+                    <div class="detail-item">
+                        <div class="detail-label">Start Date</div>
+                        <div class="detail-value">{{startDate}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Expected Duration</div>
+                        <div class="detail-value">{{duration}}</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Team Size</div>
+                        <div class="detail-value">{{teamSize}} members</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-label">Project Type</div>
+                        <div class="detail-value">{{projectType}}</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="role-info">
+                <h3>🎭 Your Role</h3>
+                <p><strong>Position:</strong> {{roleTitle}}</p>
+                <p><strong>Responsibilities:</strong> {{roleDescription}}</p>
+                <p><strong>Access Level:</strong> {{accessLevel}}</p>
+            </div>
+            
+            <div class="cta-section">
+                <h3>Ready to join the team?</h3>
+                <div class="action-buttons">
+                    <a href="{{acceptUrl}}" class="btn btn-accept">
+                        ✅ Accept Invitation
+                    </a>
+                    <a href="{{declineUrl}}" class="btn btn-decline">
+                        ❌ Decline
+                    </a>
+                </div>
+                <p style="margin-top: 20px; font-size: 14px; color: #666;">
+                    This invitation expires on {{expiryDate}}
+                </p>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Invitation sent on {{invitationDate}}</p>
+            <p>Questions? Contact {{inviterName}} at {{inviterEmail}}</p>
+            
+            <div class="company-info">
+                <p>{{companyName}} | {{appName}}</p>
+                <p>This invitation was sent to {{inviteeEmail}}</p>
+                <p>If you weren't expecting this invitation, please ignore this email.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

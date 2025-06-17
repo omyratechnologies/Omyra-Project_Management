@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Task Assigned - {{taskTitle}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 40px 30px;
+            text-align: center;
+            position: relative;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="1" fill="white" opacity="0.1"/><circle cx="10" cy="90" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .task-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .greeting {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .greeting h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .greeting p {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .task-details {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            border-left: 6px solid #28a745;
+            position: relative;
+        }
+        
+        .task-details::before {
+            content: '📋';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            background: white;
+            padding: 5px 10px;
+            border-radius: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .task-title {
+            font-size: 22px;
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: 600;
+        }
+        
+        .task-description {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+        
+        .task-meta {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .meta-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .meta-label {
+            font-size: 12px;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .meta-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        .priority-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .priority-low {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .priority-medium {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .priority-high {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .priority-urgent {
+            background-color: #721c24;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.7; }
+            100% { opacity: 1; }
+        }
+        
+        .project-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .project-info h3 {
+            color: #1565c0;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+        
+        .project-name {
+            font-size: 20px;
+            color: #0d47a1;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .project-description {
+            font-size: 14px;
+            color: #1976d2;
+            opacity: 0.8;
+        }
+        
+        .cta-section {
+            text-align: center;
+            margin: 40px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border-radius: 12px;
+            border: 2px dashed #28a745;
+        }
+        
+        .cta-section h3 {
+            color: #333;
+            font-size: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            text-align: center;
+            min-width: 120px;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+        }
+        
+        .btn-secondary {
+            background: white;
+            color: #6c757d;
+            border: 2px solid #e9ecef;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .team-section {
+            background-color: #f1f3f4;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .team-section h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .team-members {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .team-member {
+            background: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #555;
+            border: 1px solid #e9ecef;
+        }
+        
+        .deadline-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 30px 0;
+            text-align: center;
+        }
+        
+        .deadline-warning.urgent {
+            background-color: #f8d7da;
+            border-color: #f5c6cb;
+            color: #721c24;
+        }
+        
+        .deadline-warning .warning-icon {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .tips-section {
+            background-color: #e8f5e8;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 30px 0;
+        }
+        
+        .tips-section h3 {
+            color: #2e7d32;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .tips-list {
+            list-style: none;
+            counter-reset: tip-counter;
+        }
+        
+        .tips-list li {
+            counter-increment: tip-counter;
+            margin-bottom: 10px;
+            padding-left: 25px;
+            position: relative;
+            font-size: 14px;
+            color: #2e7d32;
+        }
+        
+        .tips-list li::before {
+            content: counter(tip-counter);
+            position: absolute;
+            left: 0;
+            top: 0;
+            background-color: #4caf50;
+            color: white;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .footer {
+            background-color: #333;
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .footer p {
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        .footer .company-info {
+            font-size: 12px;
+            opacity: 0.8;
+            margin-top: 20px;
+        }
+        
+        @media (max-width: 600px) {
+            .email-container {
+                border-radius: 0;
+                margin: 0;
+            }
+            
+            .header, .content, .footer {
+                padding: 20px;
+            }
+            
+            .task-meta {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 200px;
+            }
+            
+            .team-members {
+                justify-content: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <div class="header-content">
+                <div class="task-icon">✅</div>
+                <h1>New Task Assigned</h1>
+                <p>You have a new task waiting for you</p>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="greeting">
+                <h2>Hello {{assigneeName}}! 👋</h2>
+                <p>You've been assigned a new task. Here are the details:</p>
+            </div>
+            
+            <div class="project-info">
+                <h3>📁 Project</h3>
+                <div class="project-name">{{projectName}}</div>
+                <div class="project-description">{{projectDescription}}</div>
+            </div>
+            
+            <div class="task-details">
+                <div class="task-title">{{taskTitle}}</div>
+                <div class="task-description">{{taskDescription}}</div>
+                
+                <div class="task-meta">
+                    <div class="meta-item">
+                        <div class="meta-label">Due Date</div>
+                        <div class="meta-value">{{dueDate}}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Priority</div>
+                        <div class="meta-value">
+                            <span class="priority-badge priority-{{priority}}">{{priority}}</span>
+                        </div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Assigned By</div>
+                        <div class="meta-value">{{assignedBy}}</div>
+                    </div>
+                    <div class="meta-item">
+                        <div class="meta-label">Estimated Time</div>
+                        <div class="meta-value">{{estimatedHours}} hours</div>
+                    </div>
+                </div>
+            </div>
+            
+            {{#if isUrgent}}
+            <div class="deadline-warning urgent">
+                <div class="warning-icon">🚨</div>
+                <p><strong>URGENT TASK!</strong></p>
+                <p>This task has high priority and needs immediate attention.</p>
+            </div>
+            {{else}}
+            {{#if isNearDeadline}}
+            <div class="deadline-warning">
+                <div class="warning-icon">⏰</div>
+                <p><strong>Deadline Approaching</strong></p>
+                <p>This task is due soon. Please prioritize accordingly.</p>
+            </div>
+            {{/if}}
+            {{/if}}
+            
+            <div class="cta-section">
+                <h3>Ready to get started?</h3>
+                <div class="action-buttons">
+                    <a href="{{taskUrl}}" class="btn btn-primary">
+                        📋 View Task
+                    </a>
+                    <a href="{{projectUrl}}" class="btn btn-secondary">
+                        📁 View Project
+                    </a>
+                </div>
+            </div>
+            
+            {{#if teamMembers}}
+            <div class="team-section">
+                <h3>👥 Team Members</h3>
+                <div class="team-members">
+                    {{#each teamMembers}}
+                    <div class="team-member">{{this}}</div>
+                    {{/each}}
+                </div>
+            </div>
+            {{/if}}
+            
+            <div class="tips-section">
+                <h3>💡 Productivity Tips</h3>
+                <ol class="tips-list">
+                    <li>Break down the task into smaller, manageable steps</li>
+                    <li>Set aside dedicated time blocks for focused work</li>
+                    <li>Update the task status regularly to keep the team informed</li>
+                    <li>Don't hesitate to ask questions or request clarification</li>
+                    <li>Celebrate small wins along the way</li>
+                </ol>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Task assigned on {{assignedDate}} by {{assignedBy}}</p>
+            <p>Need help? Contact your project manager or team lead.</p>
+            
+            <div class="company-info">
+                <p>{{companyName}} | {{appName}}</p>
+                <p>This notification was sent because you're a member of this project.</p>
+                <p><a href="{{notificationSettingsUrl}}" style="color: #ccc;">Manage Notifications</a></p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
