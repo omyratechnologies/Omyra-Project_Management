@@ -88,26 +88,26 @@ const startServer = async () => {
     console.log('📧 Initializing email service...');
     
     // Start SMTP server for receiving emails (optional)
-    if (config.nodeEnv === 'development') {
-      emailService.startSMTPServer(config.smtpPort);
-    }
+    // if (config.nodeEnv === 'development') {
+    //   emailService.startSMTPServer(config.smtpPort);
+    // }
     
     // Start task deadline reminder scheduler
-    emailService.startDeadlineReminders();
+    // emailService.startDeadlineReminders();
     console.log('⏰ Task deadline reminder scheduler started');
     
     // Set up email event listeners
-    emailService.on('emailSent', ({ message, result }: { message: any; result: any }) => {
-      console.log(`✅ Email sent to ${message.to}: ${message.subject}`);
-    });
+    // emailService.on('emailSent', ({ message, result }: { message: any; result: any }) => {
+    //   console.log(`✅ Email sent to ${message.to}: ${message.subject}`);
+    // });
     
-    emailService.on('emailFailed', ({ message, error }: { message: any; error: any }) => {
-      console.log(`❌ Failed to send email to ${message.to}: ${message.subject}`, error);
-    });
+    // emailService.on('emailFailed', ({ message, error }: { message: any; error: any }) => {
+    //   console.log(`❌ Failed to send email to ${message.to}: ${message.subject}`, error);
+    // });
     
-    emailService.on('emailReceived', (email: any) => {
-      console.log(`📧 Received email from ${email.from}: ${email.subject}`);
-    });
+    // emailService.on('emailReceived', (email: any) => {
+    //   console.log(`📧 Received email from ${email.from}: ${email.subject}`);
+    // });
     
     // Start listening
     app.listen(config.port, () => {

@@ -4,10 +4,11 @@ import {
   getTask,
   createTask,
   updateTask,
+  assignTask,
   deleteTask
 } from '../controllers/taskController.js';
 import { authenticate } from '../middleware/auth.js';
-import { isAdminOrProjectManager } from '../middleware/rbac.js';
+import { isAdminOrProjectManager, canAssignTasks } from '../middleware/rbac.js';
 import { validateBody } from '../middleware/validation.js';
 import { createTaskSchema, updateTaskSchema } from '../utils/validation.js';
 
@@ -20,6 +21,7 @@ router.get('/', getTasks);
 router.get('/:id', getTask);
 router.post('/', isAdminOrProjectManager, validateBody(createTaskSchema), createTask);
 router.put('/:id', validateBody(updateTaskSchema), updateTask);
+router.put('/:id/assign', canAssignTasks, assignTask);
 router.delete('/:id', isAdminOrProjectManager, deleteTask);
 
 export default router;

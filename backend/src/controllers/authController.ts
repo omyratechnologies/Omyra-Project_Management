@@ -34,9 +34,8 @@ export const register = async (
 
     // Create profile
     const profile = new Profile({
-      user: user._id,
+      user: user.id,
       fullName,
-      email,
       role: 'team_member' // Default role
     });
 
@@ -45,11 +44,11 @@ export const register = async (
     await profile.save();
 
     // Update user with profile reference
-    user.profile = profile._id as any;
+    user.profile = profile.id as any;
     await user.save();
 
     // Send welcome email (don't wait for it to complete)
-    emailService.sendWelcomeEmail(email, fullName, email).catch((error: any) => {
+    emailService.sendWelcomeEmail(email, { fullName, role: 'team_member' }).catch((error: any) => {
       console.error('Failed to send welcome email:', error);
     });
 
@@ -104,7 +103,7 @@ export const getProfile = async (
       return;
     }
 
-    const user = await User.findById(req.user.userId).populate('profile');
+    const user = await User.findById(req.user.id).populate('profile');
     if (!user) {
       errorResponse(res, 'User not found', undefined, 404);
       return;
@@ -112,7 +111,7 @@ export const getProfile = async (
 
     successResponse(res, 'Profile retrieved successfully', {
       user: {
-        id: user._id,
+        id: user.id,
         email: user.email,
         profile: user.profile
       }
@@ -135,7 +134,7 @@ export const updateProfile = async (
 
     const { fullName, phone, location, avatar } = req.body;
 
-    const profile = await Profile.findOne({ user: req.user.userId });
+    const profile = await Profile.findOne({ user: req.user.id });
     if (!profile) {
       errorResponse(res, 'Profile not found', undefined, 404);
       return;
@@ -168,7 +167,7 @@ export const updatePassword = async (
 
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user.userId);
+    const user = await User.findById(req.user.id);
     if (!user) {
       errorResponse(res, 'User not found', undefined, 404);
       return;
@@ -205,7 +204,7 @@ export const updatePreferences = async (
 
     const { notifications, appearance } = req.body;
 
-    const profile = await Profile.findOne({ user: req.user.userId });
+    const profile = await Profile.findOne({ user: req.user.id });
     if (!profile) {
       errorResponse(res, 'Profile not found', undefined, 404);
       return;
@@ -241,7 +240,7 @@ export const getPreferences = async (
       return;
     }
 
-    const profile = await Profile.findOne({ user: req.user.userId });
+    const profile = await Profile.findOne({ user: req.user.id });
     if (!profile) {
       errorResponse(res, 'Profile not found', undefined, 404);
       return;
@@ -291,7 +290,7 @@ export const requestPasswordReset = async (
 
     // Generate reset token
     const resetToken = jwt.sign(
-      { userId: user._id, email: user.email },
+      { userId: user.id, email: user.email },
       config.jwtSecret,
       { expiresIn: '1h' }
     );

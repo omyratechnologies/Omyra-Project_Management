@@ -1,41 +1,65 @@
-import mongoose from 'mongoose';
-import { IProfile, UserRole } from '../types/index.js';
+import mongoose, { Document, Schema } from 'mongoose';
 
-const profileSchema = new mongoose.Schema<IProfile>({
+export interface IProfile extends Document {
+  user: mongoose.Types.ObjectId;
+  fullName: string;
+  role: string;
+  department?: string;
+  permissions?: string[];
+  bio?: string;
+  avatar?: string;
+  phone?: string;
+  location?: string;
+  preferences?: {
+    notifications?: {
+      emailNotifications?: boolean;
+      taskAssignments?: boolean;
+      projectUpdates?: boolean;
+      dueDateReminders?: boolean;
+      teamActivity?: boolean;
+    };
+    appearance?: {
+      theme?: string;
+      language?: string;
+      timezone?: string;
+    };
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const profileSchema = new Schema({
   user: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    unique: true
+    required: true
   },
   fullName: {
     type: String,
-    required: true,
-    trim: true
-  },
-  email: {
-    type: String,
-    required: true,
-    lowercase: true,
-    trim: true
+    required: true
   },
   role: {
     type: String,
-    enum: ['admin', 'project_manager', 'team_member'],
-    default: 'team_member',
-    required: true
+    required: true,
+    enum: ['admin', 'project_manager', 'team_member', 'client']
+  },
+  department: {
+    type: String
+  },
+  permissions: [{
+    type: String
+  }],
+  bio: {
+    type: String
   },
   avatar: {
-    type: String,
-    default: null
+    type: String
   },
   phone: {
-    type: String,
-    default: null
+    type: String
   },
   location: {
-    type: String,
-    default: null
+    type: String
   },
   preferences: {
     notifications: {

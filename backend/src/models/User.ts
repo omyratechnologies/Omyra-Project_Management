@@ -14,6 +14,11 @@ const userSchema = new mongoose.Schema<IUser>({
     required: true,
     minlength: 6
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'suspended'],
+    default: 'active'
+  },
   profile: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Profile'

@@ -17,6 +17,7 @@ export const config = {
   emailUser: process.env.EMAIL_USER || '',
   emailPassword: process.env.EMAIL_PASSWORD || '',
   emailFrom: process.env.EMAIL_FROM || 'noreply@omyra-project.com',
+  emailDevMode: process.env.EMAIL_DEV_MODE === 'true',
   
   // SMTP Server configuration
   smtpUser: process.env.SMTP_USER || 'admin',

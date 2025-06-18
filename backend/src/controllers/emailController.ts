@@ -193,6 +193,36 @@ export class EmailController {
     }
   }
 
+  // Send team invitation email
+  static async sendTeamInvitationEmail(req: Request, res: Response) {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return validationErrorResponse(res, errors.array());
+      }
+
+      const { email, inviteeName, inviterName, organizationName, role, invitationToken } = req.body;
+      
+      const success = await emailService.sendTeamInvitationEmail(
+        email,
+        inviteeName,
+        inviterName,
+        organizationName || 'Omyra Project Nexus',
+        role,
+        invitationToken
+      );
+
+      if (success) {
+        return successResponse(res, 'Team invitation email sent successfully', { sent: true });
+      } else {
+        return errorResponse(res, 'Failed to send team invitation email', undefined, 500);
+      }
+    } catch (error) {
+      console.error('Error sending team invitation email:', error);
+      return errorResponse(res, 'Internal server error', undefined, 500);
+    }
+  }
+
   // Add custom email template
   static async addTemplate(req: Request, res: Response) {
     try {
@@ -265,5 +295,14 @@ export const emailValidation = {
     body('priority').isIn(['low', 'medium', 'high', 'urgent']).withMessage('Priority must be low, medium, high, or urgent'),
     body('taskLink').isURL().withMessage('Valid task link is required'),
     body('assigneeName').optional().isString()
+  ],
+
+  sendTeamInvitationEmail: [
+    body('email').isEmail().withMessage('Valid email address is required'),
+    body('inviteeName').notEmpty().withMessage('Invitee name is required'),
+    body('inviterName').notEmpty().withMessage('Inviter name is required'),
+    body('organizationName').optional().isString(),
+    body('role').isIn(['admin', 'project_manager', 'team_member']).withMessage('Role must be admin, project_manager, or team_member'),
+    body('invitationToken').notEmpty().withMessage('Invitation token is required')
   ]
 };
