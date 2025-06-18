@@ -10,10 +10,13 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm ci --only=production && npm cache clean --force
+RUN npm install -g typescript && npm install
 
-# Copy source code
-COPY dist/ ./dist/
+# Copy full source (including ts files)
+COPY . .
+
+# Build TypeScript
+RUN npm run build:production
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs
@@ -32,3 +35,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application
 CMD ["npm", "run", "start:production"]
+
