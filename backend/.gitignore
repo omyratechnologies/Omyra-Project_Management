@@ -1,0 +1,16 @@
+# Node modules
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build output
+dist/
+build/
+
+# Azure deployment files
+*.publish
+*.zip
+*.tar.gz
+
+# MongoDB data
+data/
