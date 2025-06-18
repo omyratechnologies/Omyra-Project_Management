@@ -11,8 +11,10 @@ export const updateMeetingAttendance = async (req, res) => {
             errorResponse(res, 'Meeting not found.', undefined, 404);
             return;
         }
-        // Check if user is an attendee
-        if (!meeting.attendees.includes(req.user.id)) {
+        // Check if user is an attendee or admin
+        const isAdmin = req.user.role === 'admin';
+        const isAttendee = meeting.attendees.some(attendeeId => attendeeId.toString() === req.user.id.toString());
+        if (!isAdmin && !isAttendee) {
             errorResponse(res, 'Access denied. You are not an attendee of this meeting.', undefined, 403);
             return;
         }
@@ -80,6 +82,34 @@ export const joinMeeting = async (req, res) => {
     catch (error) {
         console.error('Error joining meeting:', error);
         errorResponse(res, 'Failed to join meeting.', error instanceof Error ? error.message : 'Unknown error', 500);
+    }
+};
+export const getMyMeetingAttendance = async (req, res) => {
+    try {
+        const { meetingId } = req.params;
+        // Verify meeting exists
+        const meeting = await Meeting.findById(meetingId);
+        if (!meeting) {
+            errorResponse(res, 'Meeting not found.', undefined, 404);
+            return;
+        }
+        // Check if user is an attendee or admin
+        const isAdmin = req.user.role === 'admin';
+        const isAttendee = meeting.attendees.some(attendeeId => attendeeId.toString() === req.user.id.toString());
+        if (!isAdmin && !isAttendee) {
+            errorResponse(res, 'Access denied. You are not an attendee of this meeting.', undefined, 403);
+            return;
+        }
+        const attendee = await MeetingAttendee.findOne({
+            meeting: meetingId,
+            user: req.user.id
+        }).populate('user', 'email profile');
+        // Return the attendance record, or null if not found
+        successResponse(res, 'Meeting attendance retrieved successfully.', attendee);
+    }
+    catch (error) {
+        console.error('Error getting meeting attendance:', error);
+        errorResponse(res, 'Failed to get meeting attendance.', error instanceof Error ? error.message : 'Unknown error', 500);
     }
 };
 export const leaveMeeting = async (req, res) => {

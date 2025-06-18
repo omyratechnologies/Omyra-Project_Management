@@ -1,6 +1,7 @@
 import { Task, Project, ProjectMember, User } from '../models/index.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { emailService } from '../services/emailService.js';
+import { notificationService } from '../services/notificationService.js';
 export const getTasks = async (req, res, next) => {
     try {
         if (!req.user) {
@@ -213,8 +214,27 @@ export const createTask = async (req, res, next) => {
             const assignerName = creator.profile?.fullName || creator.email.split('@')[0];
             const projectName = projectData.title;
             const dueDateTime = dueDate ? new Date(dueDate).toLocaleDateString() : 'No due date set';
+            // Send email notification
             emailService.sendTaskAssignmentEmail(assignee.email, assigneeName, assignerName, projectName, title, description || '', dueDateTime, priority || 'medium', task.id.toString()).catch((error) => {
                 console.error('Failed to send task assignment email:', error);
+            });
+            // Send real-time notification
+            await notificationService.sendNotification({
+                userId: assignedTo,
+                type: 'task_assigned',
+                title: 'New Task Assigned',
+                message: `You have been assigned a new task: "${title}" in project "${projectName}"`,
+                priority: priority === 'urgent' ? 'urgent' : priority === 'high' ? 'high' : 'medium',
+                actionable: true,
+                action: 'View Task',
+                link: `/tasks/${task.id}`,
+                metadata: {
+                    projectId: projectId,
+                    taskId: task.id.toString(),
+                    assignedBy: req.user.id
+                }
+            }).catch((error) => {
+                console.error('Failed to send task assignment notification:', error);
             });
         }
         successResponse(res, 'Task created successfully', populatedTask, 201);
@@ -317,8 +337,48 @@ export const updateTask = async (req, res, next) => {
             const assignerName = creator.profile?.fullName || creator.email.split('@')[0];
             const projectName = projectData.title;
             const dueDateTime = updatedTask.dueDate ? new Date(updatedTask.dueDate).toLocaleDateString() : 'No due date set';
+            // Send email notification
             emailService.sendTaskAssignmentEmail(assignee.email, assigneeName, assignerName, projectName, updatedTask.title, updatedTask.description || '', dueDateTime, updatedTask.priority || 'medium', updatedTask.id.toString()).catch((error) => {
                 console.error('Failed to send task assignment email:', error);
+            });
+            // Send real-time notification for task reassignment
+            await notificationService.sendNotification({
+                userId: newAssignedTo,
+                type: 'task_assigned',
+                title: 'Task Reassigned',
+                message: `You have been assigned to task: "${updatedTask.title}" in project "${projectName}"`,
+                priority: updatedTask.priority === 'urgent' ? 'urgent' : updatedTask.priority === 'high' ? 'high' : 'medium',
+                actionable: true,
+                action: 'View Task',
+                link: `/tasks/${updatedTask.id}`,
+                metadata: {
+                    projectId: updatedTask.project.toString(),
+                    taskId: updatedTask.id.toString(),
+                    assignedBy: req.user.id
+                }
+            }).catch((error) => {
+                console.error('Failed to send task reassignment notification:', error);
+            });
+        }
+        // Send notification for task completion
+        if (updates.status === 'done' && task.status !== 'done' && task.assignedTo) {
+            const projectData = updatedTask?.project;
+            await notificationService.sendNotification({
+                userId: task.createdBy.toString(),
+                type: 'task_completed',
+                title: 'Task Completed',
+                message: `Task "${updatedTask?.title}" has been completed in project "${projectData?.title}"`,
+                priority: 'medium',
+                actionable: true,
+                action: 'View Task',
+                link: `/tasks/${updatedTask?.id}`,
+                metadata: {
+                    projectId: updatedTask?.project.toString(),
+                    taskId: updatedTask?.id.toString(),
+                    completedBy: task.assignedTo.toString()
+                }
+            }).catch((error) => {
+                console.error('Failed to send task completion notification:', error);
             });
         }
         successResponse(res, 'Task updated successfully', updatedTask);

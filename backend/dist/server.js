@@ -1,4 +1,5 @@
 import express from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
@@ -7,7 +8,9 @@ import { config } from './config/environment.js';
 import { connectDatabase } from './config/database.js';
 import routes from './routes/index.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { notificationService } from './services/notificationService.js';
 const app = express();
+const server = createServer(app);
 // Security middleware
 app.use(helmet({
     crossOriginResourcePolicy: { policy: "cross-origin" }
@@ -73,6 +76,9 @@ const startServer = async () => {
         await connectDatabase();
         // Initialize email service
         console.log('📧 Initializing email service...');
+        // Initialize real-time notification service
+        console.log('🔔 Initializing notification service...');
+        notificationService.initialize(server);
         // Start SMTP server for receiving emails (optional)
         // if (config.nodeEnv === 'development') {
         //   emailService.startSMTPServer(config.smtpPort);
@@ -91,11 +97,12 @@ const startServer = async () => {
         //   console.log(`📧 Received email from ${email.from}: ${email.subject}`);
         // });
         // Start listening
-        app.listen(config.port, () => {
+        server.listen(config.port, () => {
             console.log(`🚀 Server running on port ${config.port}`);
             console.log(`📡 Environment: ${config.nodeEnv}`);
             console.log(`🔗 Frontend URL: ${config.frontendUrl}`);
             console.log(`📚 API Documentation: http://localhost:${config.port}/api/health`);
+            console.log(`🔔 WebSocket server ready for real-time notifications`);
         });
     }
     catch (error) {

@@ -13,6 +13,7 @@ import confluenceRoutes from './confluence.js';
 import clientRoutes from './clients.js';
 import invitationRoutes from './invitations.js';
 import adminRoutes from './admin.js';
+import notificationRoutes from './notifications.js';
 
 const router = Router();
 
@@ -26,6 +27,7 @@ router.use('/email', emailRoutes);
 router.use('/meetings', meetingRoutes);
 router.use('/clients', clientRoutes);
 router.use('/invitations', invitationRoutes);
+router.use('/notifications', notificationRoutes);
 router.use('/', taskIssueRoutes);
 router.use('/', feedbackRoutes);
 router.use('/', meetingAttendanceRoutes);

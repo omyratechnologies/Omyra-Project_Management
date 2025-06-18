@@ -413,4 +413,11 @@ export declare const updateClientSchema: z.ZodObject<{
         paymentTerms?: "net-15" | "net-30" | "net-60" | "immediate" | undefined;
     } | undefined;
 }>;
+export declare const assignClientToProjectSchema: z.ZodObject<{
+    clientId: z.ZodString;
+}, "strip", z.ZodTypeAny, {
+    clientId: string;
+}, {
+    clientId: string;
+}>;
 //# sourceMappingURL=validation.d.ts.map

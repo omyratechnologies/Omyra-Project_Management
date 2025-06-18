@@ -354,20 +354,27 @@ export const canViewAllTeamMembers = async (req, res, next) => {
             next();
             return;
         }
-        // For non-admin users, they can only view team members when a specific project is provided
+        // For non-admin users, check if they have access to any projects
+        // If no projectId is provided, we'll return team members from all their projects
         const { projectId } = req.query;
-        if (!projectId) {
-            errorResponse(res, 'Access denied. Project ID is required for non-admin users.', undefined, 403);
-            return;
+        if (projectId) {
+            // Check if user is a member of the requested project
+            const projectMember = await ProjectMember.findOne({
+                project: projectId,
+                user: req.user.id
+            });
+            if (!projectMember) {
+                errorResponse(res, 'Access denied. You are not a member of this project.', undefined, 403);
+                return;
+            }
         }
-        // Check if user is a member of the requested project
-        const projectMember = await ProjectMember.findOne({
-            project: projectId,
-            user: req.user.id
-        });
-        if (!projectMember) {
-            errorResponse(res, 'Access denied. You are not a member of this project.', undefined, 403);
-            return;
+        else {
+            // If no specific project is requested, check if user has any project memberships
+            const userProjects = await ProjectMember.find({ user: req.user.id });
+            if (userProjects.length === 0) {
+                errorResponse(res, 'Access denied. You are not a member of any projects.', undefined, 403);
+                return;
+            }
         }
         next();
     }

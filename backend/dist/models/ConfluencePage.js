@@ -28,6 +28,10 @@ const confluencePageSchema = new mongoose.Schema({
         ref: 'User',
         required: true
     },
+    assignedTo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User'
+    },
     tags: [{
             type: String,
             trim: true
@@ -65,6 +69,7 @@ const confluencePageSchema = new mongoose.Schema({
 // Indexes for efficient queries
 confluencePageSchema.index({ project: 1, status: 1 });
 confluencePageSchema.index({ createdBy: 1 });
+confluencePageSchema.index({ assignedTo: 1 });
 confluencePageSchema.index({ type: 1 });
 confluencePageSchema.index({ tags: 1 });
 confluencePageSchema.index({ isPublic: 1 });

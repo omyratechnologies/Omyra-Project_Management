@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createClient, registerClient, getClients, getClient, updateClient, approveClient, deactivateClient, deleteClient, getMyClientProfile } from '../controllers/clientController.js';
+import { createClient, getClients, getClient, updateClient, approveClient, deactivateClient, deleteClient, getMyClientProfile, getClientDashboardStats, getClientProjects, getClientRecentActivity, getClientFeedback } from '../controllers/clientController.js';
 import { authenticate } from '../middleware/auth.js';
 import { validateBody, validateParams } from '../middleware/validation.js';
 import { createClientSchema, updateClientSchema } from '../utils/validation.js';
@@ -9,9 +9,7 @@ const router = Router();
 const clientIdSchema = z.object({
     clientId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid client ID format')
 });
-// Public routes
-router.post('/register', validateBody(createClientSchema), registerClient);
-// Protected routes (require authentication)
+// Protected routes (require authentication) - No public registration
 router.use(authenticate);
 // Admin/PM routes - Create client accounts
 router.post('/', validateBody(createClientSchema), createClient);
@@ -19,6 +17,11 @@ router.post('/', validateBody(createClientSchema), createClient);
 router.get('/', getClients);
 // Client profile routes
 router.get('/me', getMyClientProfile); // For clients to get their own profile
+// Client dashboard routes
+router.get('/dashboard/stats', getClientDashboardStats);
+router.get('/dashboard/projects', getClientProjects);
+router.get('/dashboard/activity', getClientRecentActivity);
+router.get('/dashboard/feedback', getClientFeedback);
 router.get('/:clientId', validateParams(clientIdSchema), getClient);
 router.put('/:clientId', validateParams(clientIdSchema), validateBody(updateClientSchema), updateClient);
 // Admin-only routes

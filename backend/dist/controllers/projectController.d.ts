@@ -8,4 +8,6 @@ export declare const deleteProject: (req: AuthenticatedRequest, res: Response, n
 export declare const addProjectMember: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 export declare const removeProjectMember: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 export declare const updateProjectStatus: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const assignClientToProject: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const removeClientFromProject: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 //# sourceMappingURL=projectController.d.ts.map
