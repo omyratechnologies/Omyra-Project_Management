@@ -23,6 +23,29 @@ export interface IProfile extends Document {
             timezone?: string;
         };
     };
+    notificationPreferences?: {
+        email?: {
+            taskAssigned?: boolean;
+            taskDue?: boolean;
+            projectUpdates?: boolean;
+            meetingReminders?: boolean;
+            feedbackResponse?: boolean;
+            systemAlerts?: boolean;
+        };
+        push?: {
+            taskAssigned?: boolean;
+            taskDue?: boolean;
+            projectUpdates?: boolean;
+            meetingReminders?: boolean;
+            feedbackResponse?: boolean;
+            systemAlerts?: boolean;
+        };
+        realTime?: {
+            enabled?: boolean;
+            sound?: boolean;
+            desktop?: boolean;
+        };
+    };
     createdAt: Date;
     updatedAt: Date;
 }

@@ -7,15 +7,23 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
+    "build:production": "rm -rf dist && tsc --project tsconfig.production.json",
     "start": "node dist/server.js",
+    "start:production": "NODE_ENV=production node dist/server.js",
+    "prestart:production": "npm run build:production",
     "db:seed": "tsx src/scripts/seed.ts",
+    "db:seed:production": "NODE_ENV=production tsx src/scripts/seed.ts",
     "test:email": "node test-email.js",
-    "test:smtp": "node test-smtp-client.js"
+    "test:smtp": "node test-smtp-client.js",
+    "health:check": "curl -f http://localhost:5000/api/health || exit 1"
   },
   "dependencies": {
+    "@types/compression": "^1.8.1",
     "@types/nodemailer": "^6.4.17",
+    "@types/socket.io": "^3.0.1",
     "axios": "^1.10.0",
     "bcryptjs": "^2.4.3",
+    "compression": "^1.8.0",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
@@ -28,6 +36,7 @@
     "mongoose": "^8.0.3",
     "nodemailer": "^7.0.3",
     "smtp-server": "^3.13.8",
+    "socket.io": "^4.8.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {

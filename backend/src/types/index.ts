@@ -44,6 +44,7 @@ export interface IProject {
   status: ProjectStatus;
   startDate?: Date;
   endDate?: Date;
+  client?: Types.ObjectId; // Reference to Client
   createdBy: Types.ObjectId; // Reference to User
   createdAt?: Date;
   updatedAt?: Date;
@@ -86,7 +87,7 @@ export interface IMeeting {
   updatedAt?: Date;
 }
 
-export type UserRole = 'admin' | 'project_manager' | 'team_member' | 'client';
+export type UserRole = 'admin' | 'project_manager' | 'team_member' | 'client' | 'accountant';
 
 export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
 
@@ -244,6 +245,7 @@ export interface IConfluencePage {
   project?: Types.ObjectId;
   createdBy: Types.ObjectId;
   lastModifiedBy: Types.ObjectId;
+  assignedTo?: Types.ObjectId;
   tags: string[];
   isPublic: boolean;
   viewPermissions: UserRole[];
@@ -292,6 +294,7 @@ export interface CreateConfluencePageRequest {
   content: string;
   type: ConfluencePageType;
   projectId?: string;
+  assignedTo?: string;
   tags: string[];
   isPublic: boolean;
   viewPermissions: UserRole[];
@@ -302,6 +305,7 @@ export interface CreateConfluencePageRequest {
 export interface UpdateConfluencePageRequest {
   title?: string;
   content?: string;
+  assignedTo?: string;
   tags?: string[];
   isPublic?: boolean;
   viewPermissions?: UserRole[];

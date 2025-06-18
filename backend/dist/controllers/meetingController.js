@@ -1,5 +1,6 @@
 import { Meeting, Project, User, Profile } from '../models/index.js';
 import { successResponse, errorResponse } from '../utils/response.js';
+import { notificationService } from '../services/notificationService.js';
 import mongoose from 'mongoose';
 export const createMeeting = async (req, res, next) => {
     try {
@@ -115,6 +116,33 @@ export const createMeeting = async (req, res, next) => {
             }
         })
             .populate('project', 'title');
+        // Send notifications to all attendees
+        if (attendeeUserIds.length > 0) {
+            const project = populatedMeeting?.project;
+            const organizer = populatedMeeting?.organizer;
+            const organizerName = organizer?.profile?.fullName || organizer?.email || 'Unknown';
+            for (const attendeeId of attendeeUserIds) {
+                if (attendeeId.toString() !== user.id) { // Don't notify the organizer
+                    await notificationService.sendNotification({
+                        userId: attendeeId.toString(),
+                        type: 'meeting_reminder',
+                        title: 'New Meeting Scheduled',
+                        message: `You have been invited to "${meeting.title}" scheduled for ${scheduledDate.toLocaleDateString()} at ${scheduledDate.toLocaleTimeString()}. Organized by ${organizerName}.`,
+                        priority: 'high',
+                        actionable: true,
+                        action: 'View Meeting',
+                        link: `/meetings/${meeting.id}`,
+                        metadata: {
+                            meetingId: meeting.id,
+                            projectId: projectId,
+                            entityType: 'meeting',
+                            entityId: meeting.id,
+                            scheduledAt: scheduledDate.toISOString()
+                        }
+                    });
+                }
+            }
+        }
         successResponse(res, 'Meeting created successfully', populatedMeeting, 201);
     }
     catch (error) {

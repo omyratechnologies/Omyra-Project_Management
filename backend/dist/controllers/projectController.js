@@ -1,6 +1,7 @@
-import { Project, ProjectMember, Profile } from '../models/index.js';
+import { Project, ProjectMember, Profile, Client } from '../models/index.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { emailService } from '../services/emailService.js';
+import { notificationService } from '../services/notificationService.js';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/environment.js';
 export const getProjects = async (req, res, next) => {
@@ -20,6 +21,10 @@ export const getProjects = async (req, res, next) => {
                     path: 'profile',
                     select: 'fullName role'
                 }
+            })
+                .populate({
+                path: 'client',
+                select: 'companyName contactPerson industry status'
             })
                 .populate({
                 path: 'members',
@@ -86,6 +91,10 @@ export const getProject = async (req, res, next) => {
                 path: 'profile',
                 select: 'fullName role'
             }
+        })
+            .populate({
+            path: 'client',
+            select: 'companyName contactPerson industry status'
         });
         if (!project) {
             errorResponse(res, 'Project not found', undefined, 404);
@@ -135,10 +144,11 @@ export const createProject = async (req, res, next) => {
             errorResponse(res, 'User not authenticated', undefined, 401);
             return;
         }
-        const { title, description, startDate, endDate } = req.body;
+        const { title, description, status, startDate, endDate } = req.body;
         const project = new Project({
             title,
             description,
+            status,
             startDate: startDate ? new Date(startDate) : undefined,
             endDate: endDate ? new Date(endDate) : undefined,
             createdBy: req.user.id
@@ -160,6 +170,27 @@ export const createProject = async (req, res, next) => {
                 select: 'fullName role'
             }
         });
+        // Send notification to all admins about new project creation
+        const adminProfiles = await Profile.find({ role: 'admin' });
+        for (const adminProfile of adminProfiles) {
+            if (adminProfile.user.toString() !== req.user.id) { // Don't notify the creator
+                await notificationService.sendNotification({
+                    userId: adminProfile.user.toString(),
+                    type: 'project_update',
+                    title: 'New Project Created',
+                    message: `A new project "${project.title}" has been created by ${req.user.profile?.fullName || req.user.email}.`,
+                    priority: 'medium',
+                    actionable: true,
+                    action: 'View Project',
+                    link: `/projects/${project.id}`,
+                    metadata: {
+                        projectId: project.id,
+                        entityType: 'project',
+                        entityId: project.id
+                    }
+                });
+            }
+        }
         successResponse(res, 'Project created successfully', populatedProject, 201);
     }
     catch (error) {
@@ -195,6 +226,8 @@ export const updateProject = async (req, res, next) => {
                 return;
             }
         }
+        // Store old status for comparison
+        const oldStatus = project.status;
         // Apply updates
         Object.assign(project, {
             ...updates,
@@ -202,6 +235,39 @@ export const updateProject = async (req, res, next) => {
             endDate: updates.endDate ? new Date(updates.endDate) : project.endDate
         });
         await project.save();
+        // If status changed, send notifications to all project members
+        if (updates.status && updates.status !== oldStatus) {
+            const projectMembers = await ProjectMember.find({ project: id }).populate('user');
+            const statusMessages = {
+                'planning': 'Project is now in planning phase',
+                'active': 'Project is now active',
+                'on_hold': 'Project has been put on hold',
+                'completed': 'Project has been completed',
+                'cancelled': 'Project has been cancelled'
+            };
+            const message = statusMessages[updates.status] || 'Project status has been updated';
+            for (const member of projectMembers) {
+                if (member.user._id.toString() !== req.user.id) { // Don't notify the updater
+                    await notificationService.sendNotification({
+                        userId: member.user._id.toString(),
+                        type: 'project_update',
+                        title: 'Project Status Updated',
+                        message: `${project.title}: ${message}`,
+                        priority: updates.status === 'completed' ? 'high' : 'medium',
+                        actionable: true,
+                        action: 'View Project',
+                        link: `/projects/${project.id}`,
+                        metadata: {
+                            projectId: project.id,
+                            entityType: 'project',
+                            entityId: project.id,
+                            oldStatus,
+                            newStatus: updates.status
+                        }
+                    });
+                }
+            }
+        }
         const updatedProject = await Project.findById(id)
             .populate('createdBy', 'email')
             .populate({
@@ -317,6 +383,23 @@ export const addProjectMember = async (req, res, next) => {
             emailService.sendProjectInvitationEmail(memberUser.email || memberUser.profile?.email || '', inviteeName, inviterName, project.title, project.description || '', roleInProject || 'member', invitationToken).catch((error) => {
                 console.error('Failed to send project invitation email:', error);
             });
+            // Send notification to the new member
+            await notificationService.sendNotification({
+                userId: actualUserId,
+                type: 'project_update',
+                title: 'Added to Project',
+                message: `You have been added to the project "${project.title}" as a ${roleInProject || 'member'}.`,
+                priority: 'high',
+                actionable: true,
+                action: 'View Project',
+                link: `/projects/${project.id}`,
+                metadata: {
+                    projectId: project.id,
+                    entityType: 'project',
+                    entityId: project.id,
+                    roleInProject: roleInProject || 'member'
+                }
+            });
         }
         successResponse(res, 'Project member added successfully', populatedMember, 201);
     }
@@ -427,6 +510,79 @@ export const updateProjectStatus = async (req, res, next) => {
             }
         }
         successResponse(res, 'Project status updated successfully', updatedProject);
+    }
+    catch (error) {
+        next(error);
+    }
+};
+export const assignClientToProject = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { clientId } = req.body;
+        // Only admins and project managers can assign clients to projects
+        if (!req.user || !['admin', 'project_manager'].includes(req.user.role)) {
+            errorResponse(res, 'Access denied. Only administrators and project managers can assign clients to projects.', undefined, 403);
+            return;
+        }
+        // Verify project exists
+        const project = await Project.findById(id);
+        if (!project) {
+            errorResponse(res, 'Project not found', undefined, 404);
+            return;
+        }
+        // Verify client exists
+        const client = await Client.findById(clientId);
+        if (!client) {
+            errorResponse(res, 'Client not found', undefined, 404);
+            return;
+        }
+        // Update project with client assignment
+        const updatedProject = await Project.findByIdAndUpdate(id, { client: clientId }, { new: true }).populate([
+            {
+                path: 'createdBy',
+                select: 'email profile',
+                populate: {
+                    path: 'profile',
+                    select: 'fullName role'
+                }
+            },
+            {
+                path: 'client',
+                select: 'companyName contactPerson'
+            }
+        ]);
+        successResponse(res, 'Client assigned to project successfully', updatedProject);
+    }
+    catch (error) {
+        next(error);
+    }
+};
+export const removeClientFromProject = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        // Only admins and project managers can remove clients from projects
+        if (!req.user || !['admin', 'project_manager'].includes(req.user.role)) {
+            errorResponse(res, 'Access denied. Only administrators and project managers can remove clients from projects.', undefined, 403);
+            return;
+        }
+        // Verify project exists
+        const project = await Project.findById(id);
+        if (!project) {
+            errorResponse(res, 'Project not found', undefined, 404);
+            return;
+        }
+        // Remove client assignment from project
+        const updatedProject = await Project.findByIdAndUpdate(id, { $unset: { client: 1 } }, { new: true }).populate([
+            {
+                path: 'createdBy',
+                select: 'email profile',
+                populate: {
+                    path: 'profile',
+                    select: 'fullName role'
+                }
+            }
+        ]);
+        successResponse(res, 'Client removed from project successfully', updatedProject);
     }
     catch (error) {
         next(error);

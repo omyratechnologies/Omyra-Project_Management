@@ -23,6 +23,10 @@ const projectSchema = new mongoose.Schema<IProject>({
   endDate: {
     type: Date
   },
+  client: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Client'
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

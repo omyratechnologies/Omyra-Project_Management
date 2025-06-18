@@ -96,3 +96,7 @@ export const updateClientSchema = z.object({
   billingInfo: billingInfoSchema,
   notes: z.string().optional()
 });
+
+export const assignClientToProjectSchema = z.object({
+  clientId: z.string().min(1, 'Client ID is required')
+});

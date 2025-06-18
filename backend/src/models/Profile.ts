@@ -24,6 +24,29 @@ export interface IProfile extends Document {
       timezone?: string;
     };
   };
+  notificationPreferences?: {
+    email?: {
+      taskAssigned?: boolean;
+      taskDue?: boolean;
+      projectUpdates?: boolean;
+      meetingReminders?: boolean;
+      feedbackResponse?: boolean;
+      systemAlerts?: boolean;
+    };
+    push?: {
+      taskAssigned?: boolean;
+      taskDue?: boolean;
+      projectUpdates?: boolean;
+      meetingReminders?: boolean;
+      feedbackResponse?: boolean;
+      systemAlerts?: boolean;
+    };
+    realTime?: {
+      enabled?: boolean;
+      sound?: boolean;
+      desktop?: boolean;
+    };
+  };
   createdAt: Date;
   updatedAt: Date;
 }
@@ -73,6 +96,29 @@ const profileSchema = new Schema({
       theme: { type: String, default: 'light' },
       language: { type: String, default: 'en' },
       timezone: { type: String, default: 'est' }
+    }
+  },
+  notificationPreferences: {
+    email: {
+      taskAssigned: { type: Boolean, default: true },
+      taskDue: { type: Boolean, default: true },
+      projectUpdates: { type: Boolean, default: true },
+      meetingReminders: { type: Boolean, default: true },
+      feedbackResponse: { type: Boolean, default: true },
+      systemAlerts: { type: Boolean, default: true }
+    },
+    push: {
+      taskAssigned: { type: Boolean, default: true },
+      taskDue: { type: Boolean, default: true },
+      projectUpdates: { type: Boolean, default: true },
+      meetingReminders: { type: Boolean, default: true },
+      feedbackResponse: { type: Boolean, default: true },
+      systemAlerts: { type: Boolean, default: true }
+    },
+    realTime: {
+      enabled: { type: Boolean, default: true },
+      sound: { type: Boolean, default: true },
+      desktop: { type: Boolean, default: true }
     }
   }
 }, {

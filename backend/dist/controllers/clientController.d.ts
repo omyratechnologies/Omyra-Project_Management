@@ -9,4 +9,8 @@ export declare const approveClient: (req: AuthenticatedRequest, res: Response, n
 export declare const deactivateClient: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 export declare const deleteClient: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 export declare const getMyClientProfile: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getClientDashboardStats: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getClientProjects: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getClientRecentActivity: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
+export declare const getClientFeedback: (req: AuthenticatedRequest, res: Response, next: NextFunction) => Promise<void>;
 //# sourceMappingURL=clientController.d.ts.map

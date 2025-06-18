@@ -41,6 +41,7 @@ export interface IProject {
     status: ProjectStatus;
     startDate?: Date;
     endDate?: Date;
+    client?: Types.ObjectId;
     createdBy: Types.ObjectId;
     createdAt?: Date;
     updatedAt?: Date;
@@ -79,7 +80,7 @@ export interface IMeeting {
     createdAt?: Date;
     updatedAt?: Date;
 }
-export type UserRole = 'admin' | 'project_manager' | 'team_member' | 'client';
+export type UserRole = 'admin' | 'project_manager' | 'team_member' | 'client' | 'accountant';
 export type ProjectStatus = 'planning' | 'active' | 'on_hold' | 'completed' | 'cancelled';
 export type TaskStatus = 'todo' | 'in_progress' | 'review' | 'done';
 export type TaskPriority = 'low' | 'medium' | 'high' | 'urgent';
@@ -113,6 +114,7 @@ export interface LoginRequest {
 export interface CreateProjectRequest {
     title: string;
     description?: string;
+    status?: ProjectStatus;
     startDate?: string;
     endDate?: string;
 }
@@ -212,6 +214,7 @@ export interface IConfluencePage {
     project?: Types.ObjectId;
     createdBy: Types.ObjectId;
     lastModifiedBy: Types.ObjectId;
+    assignedTo?: Types.ObjectId;
     tags: string[];
     isPublic: boolean;
     viewPermissions: UserRole[];
@@ -255,6 +258,7 @@ export interface CreateConfluencePageRequest {
     content: string;
     type: ConfluencePageType;
     projectId?: string;
+    assignedTo?: string;
     tags: string[];
     isPublic: boolean;
     viewPermissions: UserRole[];
@@ -264,6 +268,7 @@ export interface CreateConfluencePageRequest {
 export interface UpdateConfluencePageRequest {
     title?: string;
     content?: string;
+    assignedTo?: string;
     tags?: string[];
     isPublic?: boolean;
     viewPermissions?: UserRole[];

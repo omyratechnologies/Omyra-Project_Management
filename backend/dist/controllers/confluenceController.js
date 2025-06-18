@@ -2,7 +2,7 @@ import { successResponse, errorResponse } from '../utils/response.js';
 import { ConfluencePage } from '../models/ConfluencePage.js';
 export const createConfluencePage = async (req, res) => {
     try {
-        const { title, content, type, projectId, tags, isPublic, viewPermissions, editPermissions, parentPageId } = req.body;
+        const { title, content, type, projectId, assignedTo, tags, isPublic, viewPermissions, editPermissions, parentPageId } = req.body;
         const page = new ConfluencePage({
             title,
             content,
@@ -10,6 +10,7 @@ export const createConfluencePage = async (req, res) => {
             project: projectId || undefined,
             createdBy: req.user.id,
             lastModifiedBy: req.user.id,
+            assignedTo: assignedTo || undefined,
             tags,
             isPublic,
             viewPermissions,
@@ -17,7 +18,7 @@ export const createConfluencePage = async (req, res) => {
             parentPage: parentPageId || undefined
         });
         await page.save();
-        await page.populate(['createdBy', 'lastModifiedBy', 'project', 'parentPage']);
+        await page.populate(['createdBy', 'lastModifiedBy', 'assignedTo', 'project', 'parentPage']);
         successResponse(res, 'Confluence page created successfully.', page, 201);
     }
     catch (error) {
@@ -27,7 +28,7 @@ export const createConfluencePage = async (req, res) => {
 };
 export const getConfluencePages = async (req, res) => {
     try {
-        const { type, projectId, status, tags } = req.query;
+        const { type, projectId, status, tags, assignedToMe } = req.query;
         const userRole = req.user.role;
         const filter = {};
         // Apply filters
@@ -39,17 +40,37 @@ export const getConfluencePages = async (req, res) => {
             filter.status = status;
         if (tags)
             filter.tags = { $in: Array.isArray(tags) ? tags : [tags] };
-        // Apply permission filters
-        const permissionFilter = {
-            $or: [
-                { isPublic: true },
-                { viewPermissions: { $in: [userRole] } },
-                { createdBy: req.user.id }
-            ]
-        };
+        if (assignedToMe === 'true')
+            filter.assignedTo = req.user.id;
+        // Apply permission filters based on user role and assignment
+        // Permission rules:
+        // - Admins can see all pages
+        // - Non-admins can only see:
+        //   1. Public pages
+        //   2. Pages they have view permissions for
+        //   3. Pages they created themselves
+        //   4. Pages assigned to them
+        // - Non-admins CANNOT see unassigned pages created by others
+        let permissionFilter;
+        if (userRole === 'admin') {
+            // Admins can see all pages
+            permissionFilter = {};
+        }
+        else {
+            // Non-admins can only see specific pages
+            permissionFilter = {
+                $or: [
+                    { isPublic: true },
+                    { viewPermissions: { $in: [userRole] } },
+                    { createdBy: req.user.id },
+                    { assignedTo: req.user.id }
+                ]
+            };
+        }
         const pages = await ConfluencePage.find({ ...filter, ...permissionFilter })
             .populate('createdBy', 'email profile')
             .populate('lastModifiedBy', 'email profile')
+            .populate('assignedTo', 'email profile')
             .populate('project', 'title')
             .populate('parentPage', 'title')
             .sort({ updatedAt: -1 });
@@ -67,6 +88,7 @@ export const getConfluencePage = async (req, res) => {
         const page = await ConfluencePage.findById(pageId)
             .populate('createdBy', 'email profile')
             .populate('lastModifiedBy', 'email profile')
+            .populate('assignedTo', 'email profile')
             .populate('project', 'title description')
             .populate('parentPage', 'title');
         if (!page) {
@@ -74,9 +96,19 @@ export const getConfluencePage = async (req, res) => {
             return;
         }
         // Check view permissions
+        // Handle assignedTo and createdBy fields which can be populated or just ObjectIds
+        const assignedToId = page.assignedTo ?
+            (typeof page.assignedTo === 'object' && page.assignedTo._id ?
+                page.assignedTo._id.toString() :
+                page.assignedTo.toString()) : null;
+        const createdById = page.createdBy ?
+            (typeof page.createdBy === 'object' && page.createdBy._id ?
+                page.createdBy._id.toString() :
+                page.createdBy.toString()) : null;
         const hasViewPermission = page.isPublic ||
             page.viewPermissions.includes(userRole) ||
-            page.createdBy.id.toString() === req.user.id ||
+            createdById === req.user.id ||
+            assignedToId === req.user.id ||
             userRole === 'admin';
         if (!hasViewPermission) {
             errorResponse(res, 'Access denied. You do not have permission to view this page.', undefined, 403);
@@ -113,7 +145,7 @@ export const updateConfluencePage = async (req, res) => {
             lastModifiedBy: req.user.id,
             version: page.version + 1
         };
-        const updatedPage = await ConfluencePage.findByIdAndUpdate(pageId, finalUpdateData, { new: true, runValidators: true }).populate(['createdBy', 'lastModifiedBy', 'project', 'parentPage']);
+        const updatedPage = await ConfluencePage.findByIdAndUpdate(pageId, finalUpdateData, { new: true, runValidators: true }).populate(['createdBy', 'lastModifiedBy', 'assignedTo', 'project', 'parentPage']);
         successResponse(res, 'Confluence page updated successfully.', updatedPage);
     }
     catch (error) {

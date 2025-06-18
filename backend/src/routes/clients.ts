@@ -8,7 +8,11 @@ import {
   approveClient,
   deactivateClient,
   deleteClient,
-  getMyClientProfile
+  getMyClientProfile,
+  getClientDashboardStats,
+  getClientProjects,
+  getClientRecentActivity,
+  getClientFeedback
 } from '../controllers/clientController.js';
 import { authenticate } from '../middleware/auth.js';
 import { validateBody, validateParams } from '../middleware/validation.js';
@@ -22,10 +26,7 @@ const clientIdSchema = z.object({
   clientId: z.string().regex(/^[0-9a-fA-F]{24}$/, 'Invalid client ID format')
 });
 
-// Public routes
-router.post('/register', validateBody(createClientSchema), registerClient);
-
-// Protected routes (require authentication)
+// Protected routes (require authentication) - No public registration
 router.use(authenticate);
 
 // Admin/PM routes - Create client accounts
@@ -36,6 +37,13 @@ router.get('/', getClients);
 
 // Client profile routes
 router.get('/me', getMyClientProfile); // For clients to get their own profile
+
+// Client dashboard routes
+router.get('/dashboard/stats', getClientDashboardStats);
+router.get('/dashboard/projects', getClientProjects);
+router.get('/dashboard/activity', getClientRecentActivity);
+router.get('/dashboard/feedback', getClientFeedback);
+
 router.get('/:clientId', validateParams(clientIdSchema), getClient);
 router.put('/:clientId', validateParams(clientIdSchema), validateBody(updateClientSchema), updateClient);
 

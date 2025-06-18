@@ -1,6 +1,8 @@
 import { successResponse, errorResponse } from '../utils/response.js';
 import { ClientFeedback } from '../models/ClientFeedback.js';
 import { Project } from '../models/Project.js';
+import { Profile, ProjectMember } from '../models/index.js';
+import { notificationService } from '../services/notificationService.js';
 export const createClientFeedback = async (req, res) => {
     try {
         const { projectId } = req.params;
@@ -21,6 +23,53 @@ export const createClientFeedback = async (req, res) => {
         });
         await feedback.save();
         await feedback.populate(['client', 'project']);
+        // Notify project members and admins about new feedback
+        const projectMembers = await ProjectMember.find({ project: projectId }).populate('user');
+        const adminProfiles = await Profile.find({ role: 'admin' });
+        // Get client info for the notification
+        const clientProfile = await Profile.findOne({ user: req.user.id });
+        const clientName = clientProfile?.fullName || req.user.email || 'Client';
+        // Notify all project members
+        for (const member of projectMembers) {
+            await notificationService.sendNotification({
+                userId: member.user._id.toString(),
+                type: 'feedback_response',
+                title: 'New Client Feedback',
+                message: `${clientName} has submitted feedback for "${project.title}": ${feedback.title}`,
+                priority: feedback.priority === 'urgent' ? 'urgent' : 'high',
+                actionable: true,
+                action: 'View Feedback',
+                link: `/feedback/${feedback._id}`,
+                metadata: {
+                    feedbackId: feedback._id,
+                    projectId: projectId,
+                    entityType: 'feedback',
+                    entityId: feedback._id
+                }
+            });
+        }
+        // Notify admins who aren't already project members
+        const memberUserIds = projectMembers.map(m => m.user._id.toString());
+        for (const adminProfile of adminProfiles) {
+            if (!memberUserIds.includes(adminProfile.user.toString())) {
+                await notificationService.sendNotification({
+                    userId: adminProfile.user.toString(),
+                    type: 'feedback_response',
+                    title: 'New Client Feedback',
+                    message: `${clientName} has submitted feedback for "${project.title}": ${feedback.title}`,
+                    priority: feedback.priority === 'urgent' ? 'urgent' : 'high',
+                    actionable: true,
+                    action: 'View Feedback',
+                    link: `/feedback/${feedback._id}`,
+                    metadata: {
+                        feedbackId: feedback._id,
+                        projectId: projectId,
+                        entityType: 'feedback',
+                        entityId: feedback._id
+                    }
+                });
+            }
+        }
         successResponse(res, 'Feedback submitted successfully.', feedback, 201);
     }
     catch (error) {
@@ -67,6 +116,28 @@ export const updateClientFeedback = async (req, res) => {
             finalUpdateData.respondedAt = new Date();
         }
         const updatedFeedback = await ClientFeedback.findByIdAndUpdate(feedbackId, finalUpdateData, { new: true, runValidators: true }).populate(['client', 'assignedTo', 'respondedBy', 'project']);
+        // If a response was added, notify the client
+        if (updateData.response && feedback.client) {
+            const responderProfile = await Profile.findOne({ user: req.user.id });
+            const responderName = responderProfile?.fullName || req.user.email || 'Team member';
+            const project = updatedFeedback?.project;
+            await notificationService.sendNotification({
+                userId: feedback.client.toString(),
+                type: 'feedback_response',
+                title: 'Feedback Response Received',
+                message: `${responderName} has responded to your feedback "${feedback.title}" for project "${project?.title || 'Unknown Project'}".`,
+                priority: 'high',
+                actionable: true,
+                action: 'View Response',
+                link: `/feedback/${feedback._id}`,
+                metadata: {
+                    feedbackId: feedback._id,
+                    projectId: project?._id,
+                    entityType: 'feedback',
+                    entityId: feedback._id
+                }
+            });
+        }
         successResponse(res, 'Feedback updated successfully.', updatedFeedback);
     }
     catch (error) {
