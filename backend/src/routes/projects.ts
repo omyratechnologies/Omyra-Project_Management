@@ -4,12 +4,13 @@ import {
   getProject,
   createProject,
   updateProject,
+  updateProjectStatus,
   deleteProject,
   addProjectMember,
   removeProjectMember
 } from '../controllers/projectController.js';
 import { authenticate } from '../middleware/auth.js';
-import { isAdminOrProjectManager } from '../middleware/rbac.js';
+import { isAdminOrProjectManager, canChangeProjectStatus } from '../middleware/rbac.js';
 import { validateBody } from '../middleware/validation.js';
 import { createProjectSchema, updateProjectSchema, addProjectMemberSchema } from '../utils/validation.js';
 import { z } from 'zod';
@@ -27,6 +28,7 @@ router.get('/', getProjects);
 router.get('/:id', getProject);
 router.post('/', isAdminOrProjectManager, validateBody(createProjectSchema), createProject);
 router.put('/:id', validateBody(updateProjectSchema), updateProject);
+router.put('/:id/status', canChangeProjectStatus, updateProjectStatus);
 router.delete('/:id', deleteProject);
 router.post('/:id/members', isAdminOrProjectManager, validateBody(addProjectMemberSchema), addProjectMember);
 router.delete('/:id/members/:userId', isAdminOrProjectManager, removeProjectMember);

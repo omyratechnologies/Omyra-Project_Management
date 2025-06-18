@@ -24,17 +24,17 @@ export const getTasks = async (
       const query = projectId ? { project: projectId } : {};
       tasks = await Task.find(query)
         .populate('project', 'title')
-        .populate('assignedTo', 'email')
         .populate({
           path: 'assignedTo',
+          select: 'email createdAt updatedAt profile',
           populate: {
             path: 'profile',
             select: 'fullName role'
           }
         })
-        .populate('createdBy', 'email')
         .populate({
           path: 'createdBy',
+          select: 'email createdAt updatedAt profile',
           populate: {
             path: 'profile',
             select: 'fullName role'
@@ -43,7 +43,7 @@ export const getTasks = async (
         .sort({ createdAt: -1 });
     } else {
       // Non-admins can only see tasks from projects they're members of
-      const projectMembers = await ProjectMember.find({ user: req.user.userId });
+      const projectMembers = await ProjectMember.find({ user: req.user.id });
       const projectIds = projectMembers.map(pm => pm.project);
 
       const query: any = { project: { $in: projectIds } };
@@ -53,22 +53,22 @@ export const getTasks = async (
 
       // Team members can only see tasks assigned to them
       if (req.user.role === 'team_member') {
-        query.assignedTo = req.user.userId;
+        query.assignedTo = req.user.id;
       }
 
       tasks = await Task.find(query)
         .populate('project', 'title')
-        .populate('assignedTo', 'email')
         .populate({
           path: 'assignedTo',
+          select: 'email createdAt updatedAt profile',
           populate: {
             path: 'profile',
             select: 'fullName role'
           }
         })
-        .populate('createdBy', 'email')
         .populate({
           path: 'createdBy',
+          select: 'email createdAt updatedAt profile',
           populate: {
             path: 'profile',
             select: 'fullName role'
@@ -124,7 +124,7 @@ export const getTask = async (
     if (req.user.role !== 'admin') {
       const isMember = await ProjectMember.findOne({
         project: task.project,
-        user: req.user.userId
+        user: req.user.id
       });
 
       if (!isMember) {
@@ -133,10 +133,17 @@ export const getTask = async (
       }
 
       // Team members can only see tasks assigned to them
-      if (req.user.role === 'team_member' && 
-          task.assignedTo?.toString() !== req.user.userId) {
-        errorResponse(res, 'Access denied', undefined, 403);
-        return;
+      if (req.user.role === 'team_member') {
+        const assignedToId = task.assignedTo 
+          ? (typeof task.assignedTo === 'object' && task.assignedTo._id 
+              ? task.assignedTo._id.toString() 
+              : task.assignedTo.toString())
+          : null;
+        
+        if (assignedToId !== req.user.id) {
+          errorResponse(res, 'Access denied', undefined, 403);
+          return;
+        }
       }
     }
 
@@ -176,10 +183,19 @@ export const createTask = async (
     if (req.user.role !== 'admin') {
       const isMember = await ProjectMember.findOne({
         project: projectId,
-        user: req.user.userId
+        user: req.user.id
       });
 
-      if (!isMember && project.createdBy.toString() !== req.user.userId) {
+      // Check if user is the project creator (handle both populated and non-populated createdBy)
+      let isCreator = false;
+      if (project.createdBy) {
+        const createdById = typeof project.createdBy === 'object' && project.createdBy._id 
+          ? project.createdBy._id.toString()
+          : project.createdBy.toString();
+        isCreator = createdById === req.user.id;
+      }
+
+      if (!isMember && !isCreator) {
         errorResponse(res, 'Access denied', undefined, 403);
         return;
       }
@@ -204,25 +220,25 @@ export const createTask = async (
       priority: priority || 'medium',
       project: projectId,
       assignedTo: assignedTo || null,
-      createdBy: req.user.userId,
+      createdBy: req.user.id,
       dueDate: dueDate ? new Date(dueDate) : undefined
     });
 
     await task.save();
 
-    const populatedTask = await Task.findById(task._id)
+    const populatedTask = await Task.findById(task.id)
       .populate('project', 'title')
-      .populate('assignedTo', 'email')
       .populate({
         path: 'assignedTo',
+        select: 'email createdAt updatedAt profile',
         populate: {
           path: 'profile',
           select: 'fullName role'
         }
       })
-      .populate('createdBy', 'email')
       .populate({
         path: 'createdBy',
+        select: 'email createdAt updatedAt profile',
         populate: {
           path: 'profile',
           select: 'fullName role'
@@ -249,7 +265,7 @@ export const createTask = async (
         description || '',
         dueDateTime,
         priority || 'medium',
-        task._id.toString()
+        task.id.toString()
       ).catch((error: any) => {
         console.error('Failed to send task assignment email:', error);
       });
@@ -290,12 +306,17 @@ export const updateTask = async (
       // Project managers can update tasks in their projects
       const isMember = await ProjectMember.findOne({
         project: task.project,
-        user: req.user.userId
+        user: req.user.id
       });
       canUpdate = !!isMember;
     } else if (req.user.role === 'team_member') {
       // Team members can only update tasks assigned to them (status updates)
-      canUpdate = task.assignedTo?.toString() === req.user.userId;
+      const assignedToId = task.assignedTo 
+        ? (typeof task.assignedTo === 'object' && task.assignedTo._id 
+            ? task.assignedTo._id.toString() 
+            : task.assignedTo.toString())
+        : null;
+      canUpdate = assignedToId === req.user.id;
       
       // Team members can only update status, not other fields
       const allowedUpdates = ['status'];
@@ -377,7 +398,7 @@ export const updateTask = async (
         updatedTask.description || '',
         dueDateTime,
         updatedTask.priority || 'medium',
-        updatedTask._id.toString()
+        updatedTask.id.toString()
       ).catch((error: any) => {
         console.error('Failed to send task assignment email:', error);
       });
@@ -418,7 +439,7 @@ export const deleteTask = async (
       // Project managers can only delete tasks from their projects
       const isMember = await ProjectMember.findOne({
         project: task.project,
-        user: req.user.userId
+        user: req.user.id
       });
 
       if (!isMember) {
@@ -430,6 +451,130 @@ export const deleteTask = async (
     await Task.findByIdAndDelete(id);
 
     successResponse(res, 'Task deleted successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const assignTask = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      errorResponse(res, 'User not authenticated', undefined, 401);
+      return;
+    }
+
+    // Only admins and project managers can assign tasks
+    if (req.user.role !== 'admin' && req.user.role !== 'project_manager') {
+      errorResponse(res, 'Access denied. Only admins and project managers can assign tasks.', undefined, 403);
+      return;
+    }
+
+    const { id } = req.params;
+    const { assignedTo } = req.body;
+
+    const task = await Task.findById(id).populate('project');
+    if (!task) {
+      errorResponse(res, 'Task not found', undefined, 404);
+      return;
+    }
+
+    // Check if user is authorized to assign tasks in this project
+    if (req.user.role === 'project_manager') {
+      const isMember = await ProjectMember.findOne({
+        project: task.project,
+        user: req.user.id,
+        roleInProject: { $in: ['project_manager', 'lead'] }
+      });
+
+      if (!isMember) {
+        errorResponse(res, 'Access denied. You are not a project manager for this project.', undefined, 403);
+        return;
+      }
+    }
+
+    // Check if assignee is a member of the project
+    if (assignedTo) {
+      const isAssignedUserMember = await ProjectMember.findOne({
+        project: task.project,
+        user: assignedTo
+      });
+
+      if (!isAssignedUserMember) {
+        errorResponse(res, 'Assigned user is not a member of this project', undefined, 400);
+        return;
+      }
+
+      // Check if assignee is a team member or dev (not client)
+      const assigneeUser = await User.findById(assignedTo).populate('profile');
+      if (!assigneeUser || !assigneeUser.profile) {
+        errorResponse(res, 'Assigned user not found', undefined, 404);
+        return;
+      }
+
+      const assigneeProfile = assigneeUser.profile as any;
+      if (assigneeProfile.role === 'client') {
+        errorResponse(res, 'Cannot assign tasks to clients', undefined, 400);
+        return;
+      }
+    }
+
+    const oldAssignee = task.assignedTo;
+    task.assignedTo = assignedTo || undefined;
+    await task.save();
+
+    const updatedTask = await Task.findById(id)
+      .populate('project', 'title')
+      .populate('assignedTo', 'email')
+      .populate({
+        path: 'assignedTo',
+        populate: {
+          path: 'profile',
+          select: 'fullName role'
+        }
+      })
+      .populate('createdBy', 'email')
+      .populate({
+        path: 'createdBy',
+        populate: {
+          path: 'profile',
+          select: 'fullName role'
+        }
+      });
+
+    // Send notification email if assigned to someone new
+    if (assignedTo && assignedTo !== oldAssignee?.toString()) {
+      const assignee = updatedTask?.assignedTo as any;
+      const projectData = updatedTask?.project as any;
+      
+      if (assignee && assignee.email) {
+        const assigneeName = assignee.profile?.fullName || assignee.email.split('@')[0];
+        const assignerName = req.user.email;
+        const projectName = projectData.title;
+        const dueDateTime = task.dueDate ? task.dueDate.toLocaleDateString() : 'No due date set';
+
+        try {
+          await emailService.sendTaskAssignmentEmail(
+            assignee.email,
+            assigneeName,
+            assignerName,
+            projectName,
+            task.title,
+            task.description || '',
+            dueDateTime,
+            task.priority,
+            task.id.toString()
+          );
+        } catch (emailError) {
+          console.error('Failed to send task assignment email:', emailError);
+        }
+      }
+    }
+
+    successResponse(res, 'Task assigned successfully', updatedTask);
   } catch (error) {
     next(error);
   }

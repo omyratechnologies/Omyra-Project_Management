@@ -39,11 +39,14 @@ projectSchema.virtual('members', {
   ref: 'ProjectMember',
   localField: '_id',
   foreignField: 'project',
-  populate: {
-    path: 'user',
+  options: {
     populate: {
-      path: 'profile',
-      select: 'fullName email role'
+      path: 'user',
+      select: '-password',
+      populate: {
+        path: 'profile',
+        select: 'fullName email role'
+      }
     }
   }
 });

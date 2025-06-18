@@ -30,13 +30,13 @@ const seedData = async () => {
     await adminUser.save();
 
     const adminProfile = new Profile({
-      user: adminUser._id,
+      user: adminUser.id,
       fullName: 'System Administrator',
       email: 'admin@omyra.com',
       role: 'admin'
     });
     await adminProfile.save();
-    adminUser.profile = adminProfile._id as any;
+    adminUser.profile = adminProfile.id as any;
     await adminUser.save();
 
     // Project Manager user
@@ -47,13 +47,13 @@ const seedData = async () => {
     await pmUser.save();
 
     const pmProfile = new Profile({
-      user: pmUser._id,
+      user: pmUser.id,
       fullName: 'Project Manager',
       email: 'pm@omyra.com',
       role: 'project_manager'
     });
     await pmProfile.save();
-    pmUser.profile = pmProfile._id as any;
+    pmUser.profile = pmProfile.id as any;
     await pmUser.save();
 
     // Team Member users
@@ -64,13 +64,13 @@ const seedData = async () => {
     await member1User.save();
 
     const member1Profile = new Profile({
-      user: member1User._id,
+      user: member1User.id,
       fullName: 'Senior Developer',
       email: 'developer@omyra.com',
       role: 'team_member'
     });
     await member1Profile.save();
-    member1User.profile = member1Profile._id as any;
+    member1User.profile = member1Profile.id as any;
     await member1User.save();
 
     const member2User = new User({
@@ -80,13 +80,13 @@ const seedData = async () => {
     await member2User.save();
 
     const member2Profile = new Profile({
-      user: member2User._id,
+      user: member2User.id,
       fullName: 'UI/UX Designer',
       email: 'designer@omyra.com',
       role: 'team_member'
     });
     await member2Profile.save();
-    member2User.profile = member2Profile._id as any;
+    member2User.profile = member2Profile.id as any;
     await member2User.save();
 
     console.log('👥 Created users and profiles...');
@@ -98,7 +98,7 @@ const seedData = async () => {
       status: 'active',
       startDate: new Date('2024-01-01'),
       endDate: new Date('2024-06-30'),
-      createdBy: pmUser._id
+      createdBy: pmUser.id
     });
     await project1.save();
 
@@ -108,7 +108,7 @@ const seedData = async () => {
       status: 'planning',
       startDate: new Date('2024-03-01'),
       endDate: new Date('2024-09-30'),
-      createdBy: pmUser._id
+      createdBy: pmUser.id
     });
     await project2.save();
 
@@ -118,7 +118,7 @@ const seedData = async () => {
       status: 'active',
       startDate: new Date('2024-02-01'),
       endDate: new Date('2024-05-30'),
-      createdBy: adminUser._id
+      createdBy: adminUser.id
     });
     await project3.save();
 
@@ -127,17 +127,17 @@ const seedData = async () => {
     // Create project members
     const projectMembers = [
       // Project 1 members
-      { project: project1._id, user: pmUser._id, roleInProject: 'owner' },
-      { project: project1._id, user: member1User._id, roleInProject: 'developer' },
-      { project: project1._id, user: member2User._id, roleInProject: 'designer' },
+      { project: project1.id, user: pmUser.id, roleInProject: 'owner' },
+      { project: project1.id, user: member1User.id, roleInProject: 'developer' },
+      { project: project1.id, user: member2User.id, roleInProject: 'designer' },
       
       // Project 2 members
-      { project: project2._id, user: pmUser._id, roleInProject: 'owner' },
-      { project: project2._id, user: member1User._id, roleInProject: 'developer' },
+      { project: project2.id, user: pmUser.id, roleInProject: 'owner' },
+      { project: project2.id, user: member1User.id, roleInProject: 'developer' },
       
       // Project 3 members
-      { project: project3._id, user: adminUser._id, roleInProject: 'owner' },
-      { project: project3._id, user: member1User._id, roleInProject: 'developer' }
+      { project: project3.id, user: adminUser.id, roleInProject: 'owner' },
+      { project: project3.id, user: member1User.id, roleInProject: 'developer' }
     ];
 
     await ProjectMember.insertMany(projectMembers);
@@ -151,9 +151,9 @@ const seedData = async () => {
         description: 'Design and implement the database schema for the e-commerce platform',
         status: 'done',
         priority: 'high',
-        project: project1._id,
-        assignedTo: member1User._id,
-        createdBy: pmUser._id,
+        project: project1.id,
+        assignedTo: member1User.id,
+        createdBy: pmUser.id,
         dueDate: new Date('2024-01-15')
       },
       {
@@ -161,9 +161,9 @@ const seedData = async () => {
         description: 'Create wireframes and mockups for the product catalog',
         status: 'in_progress',
         priority: 'medium',
-        project: project1._id,
-        assignedTo: member2User._id,
-        createdBy: pmUser._id,
+        project: project1.id,
+        assignedTo: member2User.id,
+        createdBy: pmUser.id,
         dueDate: new Date('2024-02-01')
       },
       {
@@ -171,9 +171,9 @@ const seedData = async () => {
         description: 'Build secure user authentication system',
         status: 'todo',
         priority: 'high',
-        project: project1._id,
-        assignedTo: member1User._id,
-        createdBy: pmUser._id,
+        project: project1.id,
+        assignedTo: member1User.id,
+        createdBy: pmUser.id,
         dueDate: new Date('2024-02-15')
       },
       {
@@ -181,9 +181,9 @@ const seedData = async () => {
         description: 'Integrate multiple payment gateways',
         status: 'todo',
         priority: 'urgent',
-        project: project1._id,
-        assignedTo: member1User._id,
-        createdBy: pmUser._id,
+        project: project1.id,
+        assignedTo: member1User.id,
+        createdBy: pmUser.id,
         dueDate: new Date('2024-03-01')
       },
 
@@ -193,9 +193,9 @@ const seedData = async () => {
         description: 'Define the overall architecture for the mobile application',
         status: 'in_progress',
         priority: 'high',
-        project: project2._id,
-        assignedTo: member1User._id,
-        createdBy: pmUser._id,
+        project: project2.id,
+        assignedTo: member1User.id,
+        createdBy: pmUser.id,
         dueDate: new Date('2024-03-15')
       },
       {
@@ -203,9 +203,9 @@ const seedData = async () => {
         description: 'Create a comprehensive design system for the mobile app',
         status: 'todo',
         priority: 'medium',
-        project: project2._id,
-        assignedTo: member2User._id,
-        createdBy: pmUser._id,
+        project: project2.id,
+        assignedTo: member2User.id,
+        createdBy: pmUser.id,
         dueDate: new Date('2024-04-01')
       },
 
@@ -215,9 +215,9 @@ const seedData = async () => {
         description: 'Review and update all API documentation',
         status: 'done',
         priority: 'medium',
-        project: project3._id,
-        assignedTo: member1User._id,
-        createdBy: adminUser._id,
+        project: project3.id,
+        assignedTo: member1User.id,
+        createdBy: adminUser.id,
         dueDate: new Date('2024-02-15')
       },
       {
@@ -225,9 +225,9 @@ const seedData = async () => {
         description: 'Update APIs to follow REST best practices',
         status: 'in_progress',
         priority: 'high',
-        project: project3._id,
-        assignedTo: member1User._id,
-        createdBy: adminUser._id,
+        project: project3.id,
+        assignedTo: member1User.id,
+        createdBy: adminUser.id,
         dueDate: new Date('2024-04-01')
       }
     ];
@@ -245,6 +245,15 @@ const seedData = async () => {
     console.log('• Project Manager: pm@omyra.com / password123');
     console.log('• Developer: developer@omyra.com / password123');
     console.log('• Designer: designer@omyra.com / password123');
+    console.log('\n🆔 User IDs for API Testing:');
+    console.log(`• Admin ID: ${adminUser.id}`);
+    console.log(`• Project Manager ID: ${pmUser.id}`);
+    console.log(`• Developer ID: ${member1User.id}`);
+    console.log(`• Designer ID: ${member2User.id}`);
+    console.log('\n📁 Project IDs:');
+    console.log(`• E-commerce Platform: ${project1.id}`);
+    console.log(`• Mobile App Development: ${project2.id}`);
+    console.log(`• API Modernization: ${project3.id}`);
 
   } catch (error) {
     console.error('❌ Error seeding database:', error);

@@ -153,7 +153,7 @@ try {
     dueDate: task.dueDate.toLocaleDateString(),
     priority: task.priority,
     priorityColor: getPriorityColor(task.priority),
-    taskLink: `${process.env.FRONTEND_URL}/tasks/${task._id}`
+    taskLink: `${process.env.FRONTEND_URL}/tasks/${task.id}`
   });
 } catch (error) {
   console.error('Failed to send task assignment email:', error);
@@ -169,7 +169,7 @@ import jwt from 'jsonwebtoken';
 
 // Generate reset token
 const resetToken = jwt.sign(
-  { userId: user._id, email: user.email },
+  { userId: user.id, email: user.email },
   process.env.JWT_SECRET,
   { expiresIn: '1h' }
 );

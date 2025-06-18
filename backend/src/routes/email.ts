@@ -23,6 +23,7 @@ router.post('/queue', emailValidation.queueEmail, EmailController.queueEmail);
 router.post('/send-welcome', emailValidation.sendWelcomeEmail, EmailController.sendWelcomeEmail);
 router.post('/send-password-reset', emailValidation.sendPasswordResetEmail, EmailController.sendPasswordResetEmail);
 router.post('/send-task-assignment', emailValidation.sendTaskAssignmentEmail, EmailController.sendTaskAssignmentEmail);
+router.post('/send-team-invitation', emailValidation.sendTeamInvitationEmail, EmailController.sendTeamInvitationEmail);
 
 // Template management
 router.post('/templates', emailValidation.addTemplate, EmailController.addTemplate);

@@ -24,7 +24,7 @@ export const verifyToken = (token: string): AuthPayload => {
 
 export const createAuthResponse = (user: any, profile: any) => {
   const payload: AuthPayload = {
-    userId: user._id.toString(),
+    id: user.id.toString(),
     email: user.email,
     role: profile.role
   };
@@ -34,10 +34,10 @@ export const createAuthResponse = (user: any, profile: any) => {
   return {
     token,
     user: {
-      id: user._id,
+      id: user.id,
       email: user.email,
       profile: {
-        id: profile._id,
+        id: profile.id,
         fullName: profile.fullName,
         email: profile.email,
         role: profile.role,
