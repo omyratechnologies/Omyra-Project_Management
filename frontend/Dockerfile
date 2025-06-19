@@ -4,8 +4,15 @@
 FROM node:18-alpine AS builder
 
 WORKDIR /app
+COPY package*.json ./
+RUN npm install
+
 COPY . .
-RUN npm install && npm run build
+
+# Use production environment file
+COPY .env.production .env
+
+RUN npm run build
 
 # ================================
 # Step 2: Serve with NGINX
