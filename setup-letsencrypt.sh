@@ -66,9 +66,9 @@ fi
 echo -e "${GREEN}🌐 Obtaining SSL certificate from Let's Encrypt...${NC}"
 
 # Stop nginx if it's running (to free up port 80)
-if docker-compose -f docker-compose.production.yml ps nginx | grep -q "Up"; then
+if docker compose -f docker-compose.production.yml ps nginx | grep -q "Up"; then
     echo -e "${YELLOW}⏹️  Stopping nginx temporarily...${NC}"
-    docker-compose -f docker-compose.production.yml stop nginx
+    docker compose -f docker-compose.production.yml stop nginx
     RESTART_NGINX=true
 fi
 
@@ -124,7 +124,7 @@ cp "/etc/letsencrypt/live/$DOMAIN/privkey.pem" "$CERTS_DIR/server.key"
 cp "/etc/letsencrypt/live/$DOMAIN/chain.pem" "$CERTS_DIR/chain.pem"
 
 # Reload nginx
-docker-compose -f docker-compose.production.yml exec nginx nginx -s reload
+docker compose -f docker-compose.production.yml exec nginx nginx -s reload
 
 echo "Certificates renewed successfully!"
 EOF
@@ -164,7 +164,7 @@ systemctl start ssl-renewal.timer
 # Restart nginx if we stopped it
 if [ "$RESTART_NGINX" = true ]; then
     echo -e "${GREEN}🔄 Restarting nginx...${NC}"
-    docker-compose -f docker-compose.production.yml up -d nginx
+    docker compose -f docker-compose.production.yml up -d nginx
 fi
 
 echo -e "${GREEN}✅ SSL certificates set up successfully!${NC}"

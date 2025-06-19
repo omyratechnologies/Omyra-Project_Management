@@ -23,12 +23,12 @@ mkdir -p "$CERTS_DIR"
 
 # Certificate configuration
 COUNTRY="US"
-STATE="State"
-CITY="City"
-ORG="Organization"
+STATE="California"
+CITY="San Francisco"
+ORG="Omyra Technologies"
 OU="IT Department"
-CN="localhost"
-EMAIL="admin@localhost"
+CN="pms.omyratech.com"
+EMAIL="admin@omyratech.com"
 
 # Check if certificates already exist
 if [ -f "$CERTS_DIR/server.crt" ] && [ -f "$CERTS_DIR/server.key" ]; then

@@ -98,7 +98,7 @@ export default function AcceptInvitation() {
       });
       
       // Redirect to login page
-      navigate('/login');
+      navigate('/auth');
     },
     onError: (error: any) => {
       toast({
@@ -135,7 +135,7 @@ export default function AcceptInvitation() {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => navigate('/login')} 
+              onClick={() => navigate('/auth')} 
               className="w-full"
               variant="outline"
             >

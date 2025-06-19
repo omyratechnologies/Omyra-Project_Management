@@ -18,6 +18,7 @@ import NotFound from "./pages/NotFound";
 import Confluence from "./pages/Confluence";
 import ClientManagement from "./pages/ClientManagement";
 import ClientDashboard from "./pages/ClientDashboard";
+import AcceptInvitation from "./pages/AcceptInvitation";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/join-team" element={<AcceptInvitation />} />
             
             {/* Protected routes with MainLayout */}
             <Route element={
