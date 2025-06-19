@@ -1,0 +1,118 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: |
+          backend/package-lock.json
+          frontend/package-lock.json
+    
+    - name: Install Backend Dependencies
+      run: |
+        cd backend
+        npm ci
+    
+    - name: Install Frontend Dependencies
+      run: |
+        cd frontend
+        npm ci
+    
+    - name: Run Backend Tests
+      run: |
+        cd backend
+        npm test
+    
+    - name: Run Frontend Tests
+      run: |
+        cd frontend
+        npm test
+    
+    - name: Build Backend
+      run: |
+        cd backend
+        npm run build:production
+    
+    - name: Build Frontend
+      run: |
+        cd frontend
+        npm run build
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Deploy to Server
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.SSH_KEY }}
+        port: 22
+        script: |
+          cd /home/azureuser/Omyra-Project_Management
+          
+          # Pull latest changes
+          git pull origin main
+          
+          # Make scripts executable
+          chmod +x deploy-advanced.sh monitor.sh setup-ssl.sh || true
+          
+          # Update environment variables
+          echo "MONGODB_URI=mongodb://mongodb:27017/omyra-project-nexus" > .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "JWT_EXPIRES_IN=7d" >> .env
+          echo "PORT=5000" >> .env
+          echo "NODE_ENV=production" >> .env
+          echo "FRONTEND_URL=http://pms.omyratech.com" >> .env
+          echo "EMAIL_HOST=${{ secrets.EMAIL_HOST }}" >> .env
+          echo "EMAIL_PORT=${{ secrets.EMAIL_PORT }}" >> .env
+          echo "EMAIL_SECURE=true" >> .env
+          echo "EMAIL_USER=${{ secrets.EMAIL_USER }}" >> .env
+          echo "EMAIL_PASSWORD=${{ secrets.EMAIL_PASSWORD }}" >> .env
+          echo "EMAIL_FROM=${{ secrets.EMAIL_FROM }}" >> .env
+          echo "EMAIL_DEV_MODE=false" >> .env
+          
+          # Recreate SSL certificates if needed
+          if [ ! -f "ssl/certs/server.crt" ] || [ ! -f "ssl/certs/server.key" ]; then
+            mkdir -p ssl/certs
+            openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+              -keyout ssl/certs/server.key \
+              -out ssl/certs/server.crt \
+              -config ssl_config_improved.conf \
+              -extensions v3_req 2>/dev/null || {
+              echo "Using default SSL config..."
+              openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+                -keyout ssl/certs/server.key \
+                -out ssl/certs/server.crt \
+                -subj "/C=US/ST=State/L=City/O=Organization/CN=pms.omyratech.com"
+            }
+          fi
+          
+          # Deploy with Docker Compose
+          docker compose --env-file .env -f docker-compose.production.yml down
+          docker compose --env-file .env -f docker-compose.production.yml up -d --build
+          
+          # Wait for services to start
+          sleep 30
+          
+          # Run deployment tests
+          chmod +x test-deployment.sh
+          ./test-deployment.sh
