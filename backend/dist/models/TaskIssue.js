@@ -55,9 +55,7 @@ const taskIssueSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-// Indexes for efficient queries
 taskIssueSchema.index({ task: 1, status: 1 });
 taskIssueSchema.index({ reportedBy: 1 });
 taskIssueSchema.index({ assignedTo: 1 });
 export const TaskIssue = mongoose.model('TaskIssue', taskIssueSchema);
-//# sourceMappingURL=TaskIssue.js.map

@@ -35,7 +35,6 @@ const projectSchema = new mongoose.Schema({
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
-// Virtual field to populate members
 projectSchema.virtual('members', {
     ref: 'ProjectMember',
     localField: '_id',
@@ -52,4 +51,3 @@ projectSchema.virtual('members', {
     }
 });
 export const Project = mongoose.model('Project', projectSchema);
-//# sourceMappingURL=Project.js.map

@@ -19,4 +19,3 @@ export const validationErrorResponse = (res, errors) => {
         error: errors
     });
 };
-//# sourceMappingURL=response.js.map

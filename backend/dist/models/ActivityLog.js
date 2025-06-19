@@ -16,4 +16,3 @@ const activityLogSchema = new Schema({
     timestamps: true
 });
 export const ActivityLog = mongoose.model('ActivityLog', activityLogSchema);
-//# sourceMappingURL=ActivityLog.js.map

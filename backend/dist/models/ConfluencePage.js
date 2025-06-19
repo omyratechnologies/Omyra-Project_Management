@@ -66,7 +66,6 @@ const confluencePageSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-// Indexes for efficient queries
 confluencePageSchema.index({ project: 1, status: 1 });
 confluencePageSchema.index({ createdBy: 1 });
 confluencePageSchema.index({ assignedTo: 1 });
@@ -74,4 +73,3 @@ confluencePageSchema.index({ type: 1 });
 confluencePageSchema.index({ tags: 1 });
 confluencePageSchema.index({ isPublic: 1 });
 export const ConfluencePage = mongoose.model('ConfluencePage', confluencePageSchema);
-//# sourceMappingURL=ConfluencePage.js.map

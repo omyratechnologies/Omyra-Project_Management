@@ -5,7 +5,6 @@ import { isAdmin, canViewAllTeamMembers, canViewTeamMember, canUpdateTeamMember 
 import { validateBody } from '../middleware/validation.js';
 import { z } from 'zod';
 const router = Router();
-// All routes require authentication
 router.use(authenticate);
 const updateTeamMemberSchema = z.object({
     fullName: z.string().min(1).trim().optional(),
@@ -18,4 +17,3 @@ router.put('/:id', canUpdateTeamMember, validateBody(updateTeamMemberSchema), up
 router.patch('/:id', canUpdateTeamMember, validateBody(updateTeamMemberSchema), updateTeamMember);
 router.delete('/:id', isAdmin, deleteTeamMember);
 export default router;
-//# sourceMappingURL=team.js.map

@@ -41,7 +41,6 @@ export const addProjectMemberSchema = z.object({
     userId: z.string().min(1, 'User ID is required'),
     roleInProject: z.string().default('member')
 });
-// Client validation schemas
 const addressSchema = z.object({
     street: z.string().optional(),
     city: z.string().optional(),
@@ -87,4 +86,3 @@ export const updateClientSchema = z.object({
 export const assignClientToProjectSchema = z.object({
     clientId: z.string().min(1, 'Client ID is required')
 });
-//# sourceMappingURL=validation.js.map

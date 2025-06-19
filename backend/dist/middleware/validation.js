@@ -38,4 +38,3 @@ export const validateParams = (schema) => {
         }
     };
 };
-//# sourceMappingURL=validation.js.map

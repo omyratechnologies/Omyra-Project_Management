@@ -5,8 +5,8 @@ import { User, Profile, Notification } from '../models/index.js';
 import { emailService } from './emailService.js';
 class NotificationService {
     io = null;
-    connectedUsers = new Map(); // userId -> socketIds[]
-    notificationQueue = new Map(); // userId -> pending notifications
+    connectedUsers = new Map();
+    notificationQueue = new Map();
     initialize(server) {
         this.io = new SocketIOServer(server, {
             cors: {
@@ -24,7 +24,6 @@ class NotificationService {
     setupMiddleware() {
         if (!this.io)
             return;
-        // Authentication middleware
         this.io.use(async (socket, next) => {
             try {
                 const token = socket.handshake.auth.token || socket.handshake.headers.authorization?.replace('Bearer ', '');
@@ -60,15 +59,11 @@ class NotificationService {
             return;
         this.io.on('connection', (socket) => {
             console.log(`🔌 User ${socket.userId} connected (${socket.id})`);
-            // Track connected user
             if (socket.userId) {
                 this.addUserConnection(socket.userId, socket.id);
-                // Send any queued notifications
                 this.sendQueuedNotifications(socket.userId);
-                // Send initial notification state
                 this.sendNotificationSummary(socket.userId);
             }
-            // Handle notification events
             socket.on('mark_notification_read', async (notificationId) => {
                 if (socket.userId) {
                     await this.markNotificationAsRead(socket.userId, notificationId);
@@ -91,14 +86,12 @@ class NotificationService {
                     socket.emit('preferences_updated', { success: true });
                 }
             });
-            // Handle disconnection
             socket.on('disconnect', () => {
                 console.log(`🔌 User ${socket.userId} disconnected (${socket.id})`);
                 if (socket.userId) {
                     this.removeUserConnection(socket.userId, socket.id);
                 }
             });
-            // Handle errors
             socket.on('error', (error) => {
                 console.error('Socket error:', error);
             });
@@ -122,14 +115,12 @@ class NotificationService {
     isUserOnline(userId) {
         return this.connectedUsers.has(userId);
     }
-    // Main notification sending method
     async sendNotification(notificationData) {
         try {
             const userIds = Array.isArray(notificationData.userId)
                 ? notificationData.userId
                 : [notificationData.userId];
             for (const userId of userIds) {
-                // Create notification in database
                 const notification = await new Notification({
                     userId,
                     type: notificationData.type,
@@ -141,19 +132,15 @@ class NotificationService {
                     link: notificationData.link,
                     metadata: notificationData.metadata
                 }).save();
-                // Send real-time notification if user is online
                 if (this.isUserOnline(userId)) {
                     await this.sendRealTimeNotification(userId, notification);
                 }
                 else {
-                    // Queue notification for when user comes online
                     this.queueNotification(userId, notificationData);
                 }
-                // Send email notification if enabled
                 if (notificationData.emailNotification !== false) {
                     await this.sendEmailNotification(userId, notification);
                 }
-                // Log notification
                 console.log(`🔔 Notification sent to user ${userId}: ${notificationData.title}`);
             }
         }
@@ -178,7 +165,6 @@ class NotificationService {
                 read: notification.read
             });
         }
-        // Update notification summary
         this.sendNotificationSummary(userId);
     }
     async sendNotificationSummary(userId) {
@@ -208,7 +194,6 @@ class NotificationService {
         if (queuedNotifications.length === 0)
             return;
         for (const notificationData of queuedNotifications) {
-            // Find the notification in database (it should already exist)
             const notification = await Notification.findOne({
                 userId,
                 title: notificationData.title,
@@ -218,7 +203,6 @@ class NotificationService {
                 await this.sendRealTimeNotification(userId, notification);
             }
         }
-        // Clear queue
         this.notificationQueue.delete(userId);
     }
     async sendEmailNotification(userId, notification) {
@@ -226,7 +210,6 @@ class NotificationService {
             const user = await User.findById(userId).populate('profile');
             if (!user || !user.email)
                 return;
-            // Check user's email notification preferences
             const preferences = await this.getNotificationPreferences(userId);
             const emailEnabled = this.shouldSendEmailForType(notification.type, preferences);
             if (!emailEnabled)
@@ -290,7 +273,6 @@ class NotificationService {
     async markNotificationAsRead(userId, notificationId) {
         try {
             await Notification.findOneAndUpdate({ _id: notificationId, userId }, { read: true, updatedAt: new Date() });
-            // Send updated summary
             this.sendNotificationSummary(userId);
         }
         catch (error) {
@@ -336,7 +318,6 @@ class NotificationService {
         try {
             const user = await User.findById(userId).populate('profile');
             const profile = user?.profile;
-            // Return default preferences if none set
             return profile?.notificationPreferences || {
                 email: {
                     taskAssigned: true,
@@ -397,23 +378,17 @@ class NotificationService {
         }
     }
     startNotificationProcessing() {
-        // Process scheduled notifications every minute
         setInterval(async () => {
             await this.processScheduledNotifications();
         }, 60000);
-        // Clean up old notifications every hour
         setInterval(async () => {
             await this.cleanupOldNotifications();
         }, 3600000);
     }
     async processScheduledNotifications() {
-        // This could be used for scheduled notifications like reminders
-        // Implementation would depend on specific requirements
     }
     async cleanupOldNotifications() {
         try {
-            // Delete notifications older than 30 days (handled by TTL index)
-            // This is a backup cleanup in case TTL doesn't work as expected
             const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
             await Notification.deleteMany({
                 createdAt: { $lt: thirtyDaysAgo },
@@ -424,10 +399,8 @@ class NotificationService {
             console.error('Error cleaning up old notifications:', error);
         }
     }
-    // Utility method to broadcast to all users
     async broadcastToAll(notificationData) {
         try {
-            // Get all users
             const users = await User.find({}).select('_id');
             const notification = {
                 ...notificationData,
@@ -439,7 +412,6 @@ class NotificationService {
             console.error('Error broadcasting to all users:', error);
         }
     }
-    // Utility method to broadcast to users with specific role
     async broadcastToRole(role, notificationData) {
         try {
             const profiles = await Profile.find({ role }).populate('user');
@@ -456,11 +428,9 @@ class NotificationService {
             console.error('Error broadcasting to role:', error);
         }
     }
-    // Get connected users count
     getConnectedUsersCount() {
         return this.connectedUsers.size;
     }
-    // Get specific user's connection status
     getUserConnectionStatus(userId) {
         const connections = this.connectedUsers.get(userId) || [];
         return {
@@ -470,4 +440,3 @@ class NotificationService {
     }
 }
 export const notificationService = new NotificationService();
-//# sourceMappingURL=notificationService.js.map

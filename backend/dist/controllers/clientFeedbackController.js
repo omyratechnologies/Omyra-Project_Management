@@ -7,7 +7,6 @@ export const createClientFeedback = async (req, res) => {
     try {
         const { projectId } = req.params;
         const { type, title, description, priority } = req.body;
-        // Verify project exists
         const project = await Project.findById(projectId);
         if (!project) {
             errorResponse(res, 'Project not found.', undefined, 404);
@@ -23,13 +22,10 @@ export const createClientFeedback = async (req, res) => {
         });
         await feedback.save();
         await feedback.populate(['client', 'project']);
-        // Notify project members and admins about new feedback
         const projectMembers = await ProjectMember.find({ project: projectId }).populate('user');
         const adminProfiles = await Profile.find({ role: 'admin' });
-        // Get client info for the notification
         const clientProfile = await Profile.findOne({ user: req.user.id });
         const clientName = clientProfile?.fullName || req.user.email || 'Client';
-        // Notify all project members
         for (const member of projectMembers) {
             await notificationService.sendNotification({
                 userId: member.user._id.toString(),
@@ -48,7 +44,6 @@ export const createClientFeedback = async (req, res) => {
                 }
             });
         }
-        // Notify admins who aren't already project members
         const memberUserIds = projectMembers.map(m => m.user._id.toString());
         for (const adminProfile of adminProfiles) {
             if (!memberUserIds.includes(adminProfile.user.toString())) {
@@ -109,14 +104,12 @@ export const updateClientFeedback = async (req, res) => {
             errorResponse(res, 'Feedback not found.', undefined, 404);
             return;
         }
-        // Handle response
         const finalUpdateData = { ...updateData };
         if (updateData.response && updateData.status === 'resolved') {
             finalUpdateData.respondedBy = req.user.id;
             finalUpdateData.respondedAt = new Date();
         }
         const updatedFeedback = await ClientFeedback.findByIdAndUpdate(feedbackId, finalUpdateData, { new: true, runValidators: true }).populate(['client', 'assignedTo', 'respondedBy', 'project']);
-        // If a response was added, notify the client
         if (updateData.response && feedback.client) {
             const responderProfile = await Profile.findOne({ user: req.user.id });
             const responderName = responderProfile?.fullName || req.user.email || 'Team member';
@@ -172,7 +165,6 @@ export const deleteClientFeedback = async (req, res) => {
             errorResponse(res, 'Feedback not found.', undefined, 404);
             return;
         }
-        // Only admin or the client who created it can delete
         if (req.user.role !== 'admin' && feedback.client.toString() !== req.user.id) {
             errorResponse(res, 'Access denied. You can only delete your own feedback.', undefined, 403);
             return;
@@ -185,4 +177,3 @@ export const deleteClientFeedback = async (req, res) => {
         errorResponse(res, 'Failed to delete feedback.', error instanceof Error ? error.message : 'Unknown error', 500);
     }
 };
-//# sourceMappingURL=clientFeedbackController.js.map

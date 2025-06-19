@@ -31,7 +31,6 @@ router.use('/', feedbackRoutes);
 router.use('/', meetingAttendanceRoutes);
 router.use('/confluence', confluenceRoutes);
 router.use('/invitations', invitationRoutes);
-// Health check endpoint
 router.get('/health', (req, res) => {
     res.json({
         status: 'OK',
@@ -40,4 +39,3 @@ router.get('/health', (req, res) => {
     });
 });
 export default router;
-//# sourceMappingURL=index.js.map

@@ -6,7 +6,6 @@ import { validateBody } from '../middleware/validation.js';
 import { createProjectSchema, updateProjectSchema, addProjectMemberSchema, assignClientToProjectSchema } from '../utils/validation.js';
 import { z } from 'zod';
 const router = Router();
-// All routes require authentication
 router.use(authenticate);
 const idSchema = z.object({
     id: z.string().min(1, 'ID is required')
@@ -22,4 +21,3 @@ router.delete('/:id/members/:userId', isAdminOrProjectManager, removeProjectMemb
 router.put('/:id/client', isAdminOrProjectManager, validateBody(assignClientToProjectSchema), assignClientToProject);
 router.delete('/:id/client', isAdminOrProjectManager, removeClientFromProject);
 export default router;
-//# sourceMappingURL=projects.js.map

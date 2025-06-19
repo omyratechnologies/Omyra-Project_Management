@@ -10,7 +10,6 @@ export const getTeamMembers = async (req, res, next) => {
         const { projectId } = req.query;
         let profiles;
         if (projectId) {
-            // Get team members for a specific project
             const projectMembers = await ProjectMember.find({ project: projectId })
                 .populate({
                 path: 'user',
@@ -27,7 +26,6 @@ export const getTeamMembers = async (req, res, next) => {
             }));
         }
         else {
-            // For admin users - get all team members
             if (req.user.role === 'admin') {
                 const profilesData = await Profile.find()
                     .populate('user', 'email')
@@ -40,14 +38,12 @@ export const getTeamMembers = async (req, res, next) => {
                 }));
             }
             else {
-                // For non-admin users - get only team members from their projects
                 const userProjects = await ProjectMember.find({ user: req.user.id }).select('project');
                 const userProjectIds = userProjects.map(pm => pm.project);
                 if (userProjectIds.length === 0) {
                     profiles = [];
                 }
                 else {
-                    // Get all project members from user's projects
                     const projectMembers = await ProjectMember.find({
                         project: { $in: userProjectIds }
                     })
@@ -58,7 +54,6 @@ export const getTeamMembers = async (req, res, next) => {
                             select: 'fullName email role avatar createdAt'
                         }
                     });
-                    // Remove duplicates and format response
                     const uniqueProfiles = new Map();
                     projectMembers.forEach(pm => {
                         const userId = pm.user._id.toString();
@@ -87,20 +82,17 @@ export const getTeamMember = async (req, res, next) => {
             return;
         }
         const { id } = req.params;
-        // Validate if the ID is a valid MongoDB ObjectId
         if (!mongoose.Types.ObjectId.isValid(id)) {
             errorResponse(res, 'Invalid team member ID format', undefined, 400);
             return;
         }
         console.log('Looking up team member with ID:', id);
-        // First try to find by Profile ID with expanded user data
         let profile = await Profile.findById(id)
             .populate({
             path: 'user',
             select: 'email status createdAt'
         });
         console.log('Profile lookup result:', profile ? 'found' : 'not found');
-        // If not found by Profile ID, try to find by User ID
         if (!profile) {
             console.log('Profile not found, trying User ID lookup');
             const user = await User.findById(id);
@@ -120,27 +112,21 @@ export const getTeamMember = async (req, res, next) => {
             return;
         }
         const targetUserId = profile.user.id.toString();
-        // Check permissions based on role and project membership
         if (req.user.role === 'admin') {
-            // Admin can view all profiles
         }
         else if (targetUserId === req.user.id) {
-            // Users can view their own profile
         }
         else {
-            // Non-admin users can only view team members from same projects
             const currentUserProjects = await ProjectMember.find({ user: req.user.id }).select('project');
             const targetUserProjects = await ProjectMember.find({ user: targetUserId }).select('project');
             const currentUserProjectIds = currentUserProjects.map(pm => pm.project.toString());
             const targetUserProjectIds = targetUserProjects.map(pm => pm.project.toString());
-            // Check if there's any common project
             const hasCommonProject = currentUserProjectIds.some(projectId => targetUserProjectIds.includes(projectId));
             if (!hasCommonProject) {
                 errorResponse(res, 'Access denied. You can only view team members from your projects.', undefined, 403);
                 return;
             }
         }
-        // Return a more complete profile object
         const enrichedProfile = {
             ...profile.toObject(),
             user: {
@@ -170,7 +156,6 @@ export const updateTeamMember = async (req, res, next) => {
             return;
         }
         const targetUserId = profile.user.toString();
-        // Check permissions
         const isOwnProfile = targetUserId === req.user.id;
         const canUpdateRole = req.user.role === 'admin';
         const canUpdateProfile = isOwnProfile || req.user.role === 'admin';
@@ -178,12 +163,10 @@ export const updateTeamMember = async (req, res, next) => {
             errorResponse(res, 'Access denied. You can only update your own profile.', undefined, 403);
             return;
         }
-        // Only admins can update roles
         if (role && !canUpdateRole) {
             errorResponse(res, 'Access denied. Only admins can update user roles.', undefined, 403);
             return;
         }
-        // Update allowed fields
         if (fullName)
             profile.fullName = fullName;
         if (avatar !== undefined)
@@ -205,7 +188,6 @@ export const deleteTeamMember = async (req, res, next) => {
             errorResponse(res, 'User not authenticated', undefined, 401);
             return;
         }
-        // Only admins can delete team members
         if (req.user.role !== 'admin') {
             errorResponse(res, 'Access denied. Only admins can delete team members', undefined, 403);
             return;
@@ -216,14 +198,11 @@ export const deleteTeamMember = async (req, res, next) => {
             errorResponse(res, 'Team member not found', undefined, 404);
             return;
         }
-        // Prevent deleting own account
         if (profile.user.toString() === req.user.id) {
             errorResponse(res, 'Cannot delete your own account', undefined, 400);
             return;
         }
-        // Remove from all project memberships
         await ProjectMember.deleteMany({ user: profile.user });
-        // Delete profile and user
         await Profile.findByIdAndDelete(id);
         await User.findByIdAndDelete(profile.user);
         successResponse(res, 'Team member deleted successfully');
@@ -232,4 +211,3 @@ export const deleteTeamMember = async (req, res, next) => {
         next(error);
     }
 };
-//# sourceMappingURL=teamController.js.map

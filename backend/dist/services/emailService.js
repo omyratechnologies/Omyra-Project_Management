@@ -10,7 +10,6 @@ export class EmailService {
     }
     async initializeTransporter() {
         try {
-            // Check if we're in development mode
             if (config.emailDevMode) {
                 console.log('📧 Email service initialized in development mode');
                 this.transporter = nodemailer.createTransport({
@@ -20,7 +19,6 @@ export class EmailService {
                 });
                 return;
             }
-            // Production email configuration
             const emailConfig = {
                 host: config.emailHost,
                 port: config.emailPort,
@@ -29,8 +27,8 @@ export class EmailService {
                     user: config.emailUser,
                     pass: config.emailPassword
                 },
-                debug: true, // Enable debug logs
-                logger: true // Enable logger
+                debug: true,
+                logger: true
             };
             console.log('📧 Attempting to connect to email server with configuration:', {
                 host: emailConfig.host,
@@ -39,7 +37,6 @@ export class EmailService {
                 user: emailConfig.auth.user
             });
             this.transporter = nodemailer.createTransport(emailConfig);
-            // Verify connection configuration
             if (this.transporter) {
                 try {
                     await this.transporter.verify();
@@ -53,7 +50,6 @@ export class EmailService {
                         response: verifyError.response,
                         responseCode: verifyError.responseCode
                     });
-                    // If authentication fails, fall back to development mode
                     if (verifyError.code === 'EAUTH') {
                         console.log('⚠️ Falling back to development mode due to authentication failure');
                         this.transporter = nodemailer.createTransport({
@@ -76,7 +72,6 @@ export class EmailService {
                 response: error.response,
                 responseCode: error.responseCode
             });
-            // Fallback to console logging
             this.transporter = nodemailer.createTransport({
                 streamTransport: true,
                 newline: 'unix',
@@ -92,7 +87,6 @@ export class EmailService {
                     throw new Error('Email transporter not initialized');
                 }
             }
-            // Always log the attempt in development mode
             if (config.emailDevMode) {
                 console.log('📧 Email would be sent (development mode):');
                 console.log(`   To: ${message.to}`);
@@ -103,7 +97,7 @@ export class EmailService {
             }
             const result = await this.transporter.sendMail({
                 ...message,
-                from: message.from || config.emailFrom // Use default from address if not specified
+                from: message.from || config.emailFrom
             });
             console.log('✅ Email sent successfully:', result.messageId);
             return true;
@@ -116,7 +110,6 @@ export class EmailService {
                 response: error.response,
                 responseCode: error.responseCode
             });
-            // If we get an authentication error, try to reinitialize the transporter
             if (error.code === 'EAUTH') {
                 console.log('⚠️ Authentication failed, attempting to reinitialize transporter...');
                 await this.initializeTransporter();
@@ -229,4 +222,3 @@ export class EmailService {
     }
 }
 export const emailService = new EmailService();
-//# sourceMappingURL=emailService.js.map

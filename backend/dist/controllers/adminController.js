@@ -3,14 +3,12 @@ import { hashPassword } from '../utils/auth.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { emailService } from '../services/emailService.js';
 import mongoose from 'mongoose';
-// Dashboard Statistics
 export const getDashboardStats = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
             errorResponse(res, 'Access denied. Admin access required.', undefined, 403);
             return;
         }
-        // Get all statistics in parallel
         const [totalUsers, totalProjects, totalTasks, totalClients, activeProjects, completedProjects, pendingTasks, completedTasks, usersByRole, projectsByStatus, tasksByStatus, clientsByStatus, recentUsers, recentProjects] = await Promise.all([
             User.countDocuments(),
             Project.countDocuments(),
@@ -73,7 +71,6 @@ export const getDashboardStats = async (req, res, next) => {
         next(error);
     }
 };
-// User Management
 export const getAllUsers = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -82,7 +79,6 @@ export const getAllUsers = async (req, res, next) => {
         }
         const { page = 1, limit = 20, role, status, search } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        // Build filter
         const filter = {};
         if (role)
             filter.role = role;
@@ -124,33 +120,26 @@ export const createUser = async (req, res, next) => {
             return;
         }
         const { email, password, fullName, role = 'team_member' } = req.body;
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             errorResponse(res, 'User already exists with this email', undefined, 400);
             return;
         }
-        // Hash password
         const hashedPassword = await hashPassword(password);
-        // Create user
         const user = new User({
             email,
             password: hashedPassword
         });
-        // Create profile
         const profile = new Profile({
             user: user.id,
             fullName,
             email,
             role
         });
-        // Save both documents
         await user.save();
         await profile.save();
-        // Update user with profile reference
         user.profile = profile.id;
         await user.save();
-        // Send welcome email
         emailService.sendWelcomeEmail(email, {
             fullName,
             password,
@@ -174,11 +163,9 @@ export const updateUser = async (req, res, next) => {
         }
         const { userId } = req.params;
         const { fullName, email, role, status } = req.body;
-        // Try to find profile by User ID first, then by Profile ID
         let profile = await Profile.findOne({ user: userId });
         let actualUserId = userId;
         if (!profile) {
-            // Try finding by Profile ID
             profile = await Profile.findById(userId);
             if (profile) {
                 actualUserId = profile.user.toString();
@@ -188,13 +175,11 @@ export const updateUser = async (req, res, next) => {
             errorResponse(res, 'User not found', undefined, 404);
             return;
         }
-        // Update profile fields
         if (fullName)
             profile.fullName = fullName;
         if (role)
             profile.role = role;
         await profile.save();
-        // Update user email if changed
         if (email) {
             await User.findByIdAndUpdate(actualUserId, { email });
         }
@@ -213,11 +198,9 @@ export const deleteUser = async (req, res, next) => {
             return;
         }
         const { userId } = req.params;
-        // Try to find profile by User ID first, then by Profile ID
         let profile = await Profile.findOne({ user: userId });
         let actualUserId = userId;
         if (!profile) {
-            // Try finding by Profile ID
             profile = await Profile.findById(userId);
             if (profile) {
                 actualUserId = profile.user.toString();
@@ -227,16 +210,12 @@ export const deleteUser = async (req, res, next) => {
             errorResponse(res, 'User not found', undefined, 404);
             return;
         }
-        // Prevent deleting own account
         if (actualUserId === req.user.id) {
             errorResponse(res, 'Cannot delete your own account', undefined, 400);
             return;
         }
-        // Remove from all project memberships
         await ProjectMember.deleteMany({ user: actualUserId });
-        // Reassign or delete tasks assigned to this user
         await Task.updateMany({ assignedTo: actualUserId }, { $unset: { assignedTo: 1 } });
-        // Delete profile and user
         await Profile.findByIdAndDelete(profile._id);
         await User.findByIdAndDelete(actualUserId);
         successResponse(res, 'User deleted successfully');
@@ -253,11 +232,9 @@ export const resetUserPassword = async (req, res, next) => {
         }
         const { userId } = req.params;
         const { newPassword } = req.body;
-        // Try to find profile by User ID first, then by Profile ID
         let profile = await Profile.findOne({ user: userId }).populate('user');
         let actualUserId = userId;
         if (!profile) {
-            // Try finding by Profile ID
             profile = await Profile.findById(userId).populate('user');
             if (profile) {
                 actualUserId = profile.user.toString();
@@ -269,7 +246,6 @@ export const resetUserPassword = async (req, res, next) => {
         }
         const hashedPassword = await hashPassword(newPassword);
         await User.findByIdAndUpdate(actualUserId, { password: hashedPassword });
-        // Send password reset notification
         emailService.sendPasswordResetEmail(profile.user.email, profile.fullName, 'admin-reset').catch((error) => {
             console.error('Failed to send password reset confirmation:', error);
         });
@@ -279,7 +255,6 @@ export const resetUserPassword = async (req, res, next) => {
         next(error);
     }
 };
-// Project Management
 export const createProject = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -291,7 +266,6 @@ export const createProject = async (req, res, next) => {
             createdBy: req.user.id
         });
         await project.save();
-        // Create project members if team members are provided
         if (req.body.teamMembers && Array.isArray(req.body.teamMembers)) {
             const projectMembers = req.body.teamMembers.map((userId) => ({
                 project: project.id,
@@ -319,11 +293,8 @@ export const updateProject = async (req, res, next) => {
             errorResponse(res, 'Project not found', undefined, 404);
             return;
         }
-        // Update project members if team members are provided
         if (updates.teamMembers && Array.isArray(updates.teamMembers)) {
-            // Remove existing members
             await ProjectMember.deleteMany({ project: projectId });
-            // Add new members
             const projectMembers = updates.teamMembers.map((userId) => ({
                 project: projectId,
                 user: userId,
@@ -344,11 +315,8 @@ export const deleteProject = async (req, res, next) => {
             return;
         }
         const { projectId } = req.params;
-        // Delete project members first
         await ProjectMember.deleteMany({ project: projectId });
-        // Delete associated tasks
         await Task.deleteMany({ project: projectId });
-        // Delete the project
         const project = await Project.findByIdAndDelete(projectId);
         if (!project) {
             errorResponse(res, 'Project not found', undefined, 404);
@@ -426,7 +394,6 @@ export const getAllProjects = async (req, res, next) => {
         next(error);
     }
 };
-// RBAC Management
 export const getRoles = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -501,17 +468,14 @@ export const updateUserRole = async (req, res, next) => {
             errorResponse(res, 'Invalid role specified', undefined, 400);
             return;
         }
-        // Try to find profile by User ID first, then by Profile ID
         let profile = await Profile.findOne({ user: userId }).populate('user', 'email');
         if (!profile) {
-            // Try finding by Profile ID
             profile = await Profile.findById(userId).populate('user', 'email');
         }
         if (!profile) {
             errorResponse(res, 'User not found', undefined, 404);
             return;
         }
-        // Update the role
         profile.role = role;
         await profile.save();
         successResponse(res, 'User role updated successfully', profile);
@@ -520,7 +484,6 @@ export const updateUserRole = async (req, res, next) => {
         next(error);
     }
 };
-// Client Management
 export const getAllClientsAdmin = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -529,7 +492,6 @@ export const getAllClientsAdmin = async (req, res, next) => {
         }
         const { page = 1, limit = 20, status, search } = req.query;
         const skip = (Number(page) - 1) * Number(limit);
-        // Build filter
         const filter = {};
         if (status)
             filter.status = status;
@@ -586,13 +548,11 @@ export const assignClientToProject = async (req, res, next) => {
             errorResponse(res, 'Project not found', undefined, 404);
             return;
         }
-        // Add project to client's projects array if not already present
         if (!client.projects?.includes(new mongoose.Types.ObjectId(projectId))) {
             client.projects = client.projects || [];
             client.projects.push(new mongoose.Types.ObjectId(projectId));
             await client.save();
         }
-        // Add client as project member with 'client' role
         const existingMembership = await ProjectMember.findOne({
             project: projectId,
             user: client.user
@@ -623,10 +583,8 @@ export const removeClientFromProject = async (req, res, next) => {
             errorResponse(res, 'Client not found', undefined, 404);
             return;
         }
-        // Remove project from client's projects array
         client.projects = client.projects?.filter(p => p.toString() !== projectId) || [];
         await client.save();
-        // Remove client from project members
         await ProjectMember.deleteOne({
             project: projectId,
             user: client.user
@@ -670,32 +628,26 @@ export const getClientProjects = async (req, res, next) => {
         next(error);
     }
 };
-// Create Admin
 export const createAdmin = async (req, res, next) => {
     try {
         const { email, password, fullName, role } = req.body;
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             errorResponse(res, 'User with this email already exists', undefined, 400);
             return;
         }
-        // Hash password and create user first
         const hashedPassword = await hashPassword(password);
         const user = await User.create({
             email,
             password: hashedPassword
         });
-        // Create profile with proper user reference
         const profile = await Profile.create({
             user: user._id,
             fullName,
             role: 'admin'
         });
-        // Update user with profile reference
         user.profile = profile._id;
         await user.save();
-        // Send welcome email
         await emailService.sendWelcomeEmail(email, fullName, password);
         successResponse(res, 'Admin created successfully', { user, profile });
     }
@@ -703,7 +655,6 @@ export const createAdmin = async (req, res, next) => {
         next(error);
     }
 };
-// Get Single Admin
 export const getAdmin = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -714,7 +665,6 @@ export const getAdmin = async (req, res, next) => {
             errorResponse(res, 'Admin not found', undefined, 404);
             return;
         }
-        // Check if the populated profile is an admin
         const profile = admin.profile;
         if (!profile || profile.role !== 'admin') {
             errorResponse(res, 'User is not an admin', undefined, 400);
@@ -726,7 +676,6 @@ export const getAdmin = async (req, res, next) => {
         next(error);
     }
 };
-// Get All Admin Users
 export const listAdminUsers = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -753,7 +702,6 @@ export const listAdminUsers = async (req, res, next) => {
             .select('-password')
             .skip((page - 1) * limit)
             .limit(limit);
-        // Filter out users whose profile didn't match (non-admins)
         const filteredAdmins = admins.filter(admin => admin.profile);
         const total = await User.countDocuments(query);
         successResponse(res, 'Admins retrieved successfully', {
@@ -770,7 +718,6 @@ export const listAdminUsers = async (req, res, next) => {
         next(error);
     }
 };
-// Update Admin
 export const updateAdmin = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -785,12 +732,10 @@ export const updateAdmin = async (req, res, next) => {
             errorResponse(res, 'User is not an admin', undefined, 400);
             return;
         }
-        // Update profile
         if (fullName) {
             profile.fullName = fullName;
             await profile.save();
         }
-        // Update user
         if (email) {
             admin.email = email;
         }
@@ -804,7 +749,6 @@ export const updateAdmin = async (req, res, next) => {
         next(error);
     }
 };
-// Delete Admin
 export const deleteAdmin = async (req, res, next) => {
     try {
         const { id } = req.params;
@@ -818,13 +762,11 @@ export const deleteAdmin = async (req, res, next) => {
             errorResponse(res, 'User is not an admin', undefined, 400);
             return;
         }
-        // Check if this is the last admin
         const adminCount = await Profile.countDocuments({ role: 'admin' });
         if (adminCount <= 1) {
             errorResponse(res, 'Cannot delete the last admin', undefined, 400);
             return;
         }
-        // Delete profile and user
         await Profile.findByIdAndDelete(profile._id);
         await User.findByIdAndDelete(id);
         successResponse(res, 'Admin deleted successfully');
@@ -833,7 +775,6 @@ export const deleteAdmin = async (req, res, next) => {
         next(error);
     }
 };
-// Team Management CRUD Operations
 export const createTeamMember = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -841,13 +782,11 @@ export const createTeamMember = async (req, res, next) => {
             return;
         }
         const { email, password, role, fullName, department } = req.body;
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             errorResponse(res, 'User with this email already exists', undefined, 400);
             return;
         }
-        // Create user and profile
         const hashedPassword = await hashPassword(password);
         const user = new User({
             email,
@@ -861,7 +800,6 @@ export const createTeamMember = async (req, res, next) => {
         });
         await user.save();
         await profile.save();
-        // Send welcome email
         try {
             await emailService.sendWelcomeEmail(email, {
                 fullName,
@@ -895,11 +833,9 @@ export const updateTeamMember = async (req, res, next) => {
         }
         const { userId } = req.params;
         const { email, role, fullName, department, status } = req.body;
-        // Try to find user by User ID first, then by Profile ID
         let user = await User.findById(userId);
         let actualUserId = userId;
         if (!user) {
-            // Try finding profile by Profile ID and get the user
             const profile = await Profile.findById(userId);
             if (profile) {
                 actualUserId = profile.user.toString();
@@ -946,11 +882,9 @@ export const deleteTeamMember = async (req, res, next) => {
             return;
         }
         const { userId } = req.params;
-        // Try to find user by User ID first, then by Profile ID
         let user = await User.findById(userId);
         let actualUserId = userId;
         if (!user) {
-            // Try finding profile by Profile ID and get the user
             const profile = await Profile.findById(userId);
             if (profile) {
                 actualUserId = profile.user.toString();
@@ -961,13 +895,9 @@ export const deleteTeamMember = async (req, res, next) => {
             errorResponse(res, 'User not found', undefined, 404);
             return;
         }
-        // Remove user from all projects
         await ProjectMember.deleteMany({ user: actualUserId });
-        // Remove user's tasks
         await Task.updateMany({ assignedTo: actualUserId }, { $set: { assignedTo: null } });
-        // Delete profile
         await Profile.findOneAndDelete({ user: actualUserId });
-        // Delete user
         await User.findByIdAndDelete(actualUserId);
         successResponse(res, 'Team member deleted successfully', null);
     }
@@ -982,13 +912,11 @@ export const getTeamMember = async (req, res, next) => {
             return;
         }
         const { userId } = req.params;
-        // Try to find user by User ID first, then by Profile ID
         let user = await User.findById(userId)
             .select('-password')
             .populate('profile');
         let actualUserId = userId;
         if (!user) {
-            // Try finding profile by Profile ID and get the user
             const profile = await Profile.findById(userId).populate('user');
             if (profile) {
                 actualUserId = profile.user.toString();
@@ -1001,13 +929,11 @@ export const getTeamMember = async (req, res, next) => {
             errorResponse(res, 'User not found', undefined, 404);
             return;
         }
-        // Get user's projects
         const projectMembers = await ProjectMember.find({ user: actualUserId })
             .populate({
             path: 'project',
             select: 'name status startDate endDate'
         });
-        // Get user's tasks
         const tasks = await Task.find({ assignedTo: actualUserId })
             .populate('project', 'name');
         successResponse(res, 'Team member details retrieved successfully', {
@@ -1057,7 +983,6 @@ export const getAllTeamMembers = async (req, res, next) => {
         next(error);
     }
 };
-// Admin Privileges Management
 export const updateAdminPrivileges = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -1076,7 +1001,6 @@ export const updateAdminPrivileges = async (req, res, next) => {
             errorResponse(res, 'User profile not found', undefined, 404);
             return;
         }
-        // Update admin permissions
         profile.permissions = permissions;
         await profile.save();
         successResponse(res, 'Admin privileges updated successfully', {
@@ -1139,7 +1063,6 @@ export const getAllAdmins = async (req, res, next) => {
             .skip((Number(page) - 1) * Number(limit))
             .limit(Number(limit))
             .sort({ createdAt: -1 });
-        // Filter out users who don't have an admin profile
         const adminUsers = admins.filter(user => user.profile);
         const total = await User.countDocuments({
             'profile.role': 'admin'
@@ -1157,7 +1080,6 @@ export const getAllAdmins = async (req, res, next) => {
         next(error);
     }
 };
-// Admin Activity Logging
 export const getAdminActivityLogs = async (req, res, next) => {
     try {
         if (!req.user || req.user.role !== 'admin') {
@@ -1178,7 +1100,6 @@ export const getAdminActivityLogs = async (req, res, next) => {
         if (action) {
             query.action = action;
         }
-        // Assuming you have an ActivityLog model
         const logs = await mongoose.model('ActivityLog').find(query)
             .populate({
             path: 'adminId',
@@ -1213,7 +1134,6 @@ export const updateProjectStatus = async (req, res, next) => {
         }
         const { projectId } = req.params;
         const { status } = req.body;
-        // Validate status
         const validStatuses = ['planning', 'active', 'on_hold', 'completed', 'cancelled'];
         if (!validStatuses.includes(status)) {
             errorResponse(res, 'Invalid project status', undefined, 400);
@@ -1227,7 +1147,6 @@ export const updateProjectStatus = async (req, res, next) => {
             errorResponse(res, 'Project not found', undefined, 404);
             return;
         }
-        // Log activity
         await new ActivityLog({
             adminId: req.user.id,
             action: 'UPDATE_PROJECT_STATUS',
@@ -1243,4 +1162,3 @@ export const updateProjectStatus = async (req, res, next) => {
         next(error);
     }
 };
-//# sourceMappingURL=adminController.js.map

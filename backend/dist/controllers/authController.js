@@ -7,36 +7,28 @@ import { config } from '../config/environment.js';
 export const register = async (req, res, next) => {
     try {
         const { email, password, fullName } = req.body;
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             errorResponse(res, 'User already exists with this email', undefined, 400);
             return;
         }
-        // Hash password
         const hashedPassword = await hashPassword(password);
-        // Create user
         const user = new User({
             email,
             password: hashedPassword
         });
-        // Create profile
         const profile = new Profile({
             user: user.id,
             fullName,
-            role: 'team_member' // Default role
+            role: 'team_member'
         });
-        // Save both documents
         await user.save();
         await profile.save();
-        // Update user with profile reference
         user.profile = profile.id;
         await user.save();
-        // Send welcome email (don't wait for it to complete)
         emailService.sendWelcomeEmail(email, { fullName, role: 'team_member' }).catch((error) => {
             console.error('Failed to send welcome email:', error);
         });
-        // Create auth response
         const authResponse = createAuthResponse(user, profile);
         successResponse(res, 'User registered successfully', authResponse, 201);
     }
@@ -47,19 +39,16 @@ export const register = async (req, res, next) => {
 export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
-        // Find user with profile
         const user = await User.findOne({ email }).populate('profile');
         if (!user) {
             errorResponse(res, 'Invalid email or password', undefined, 400);
             return;
         }
-        // Check password
         const isPasswordValid = await comparePassword(password, user.password);
         if (!isPasswordValid) {
             errorResponse(res, 'Invalid email or password', undefined, 400);
             return;
         }
-        // Create auth response
         const authResponse = createAuthResponse(user, user.profile);
         successResponse(res, 'Login successful', authResponse);
     }
@@ -102,7 +91,6 @@ export const updateProfile = async (req, res, next) => {
             errorResponse(res, 'Profile not found', undefined, 404);
             return;
         }
-        // Update profile fields
         if (fullName)
             profile.fullName = fullName;
         if (phone !== undefined)
@@ -130,13 +118,11 @@ export const updatePassword = async (req, res, next) => {
             errorResponse(res, 'User not found', undefined, 404);
             return;
         }
-        // Verify current password
         const isCurrentPasswordValid = await comparePassword(currentPassword, user.password);
         if (!isCurrentPasswordValid) {
             errorResponse(res, 'Current password is incorrect', undefined, 400);
             return;
         }
-        // Hash new password
         const hashedNewPassword = await hashPassword(newPassword);
         user.password = hashedNewPassword;
         await user.save();
@@ -158,7 +144,6 @@ export const updatePreferences = async (req, res, next) => {
             errorResponse(res, 'Profile not found', undefined, 404);
             return;
         }
-        // Update preferences
         if (notifications) {
             profile.preferences = profile.preferences || {};
             profile.preferences.notifications = { ...profile.preferences.notifications, ...notifications };
@@ -212,16 +197,12 @@ export const getPreferences = async (req, res, next) => {
 export const requestPasswordReset = async (req, res, next) => {
     try {
         const { email } = req.body;
-        // Find user
         const user = await User.findOne({ email }).populate('profile');
         if (!user) {
-            // Don't reveal if email exists or not for security
             successResponse(res, 'If an account with that email exists, a password reset link has been sent');
             return;
         }
-        // Generate reset token
         const resetToken = jwt.sign({ userId: user.id, email: user.email }, config.jwtSecret, { expiresIn: '1h' });
-        // Send password reset email
         const profile = user.profile;
         const userName = profile?.fullName || email.split('@')[0];
         emailService.sendPasswordResetEmail(email, userName, resetToken).catch((error) => {
@@ -236,7 +217,6 @@ export const requestPasswordReset = async (req, res, next) => {
 export const resetPassword = async (req, res, next) => {
     try {
         const { token, newPassword } = req.body;
-        // Verify token
         let decoded;
         try {
             decoded = jwt.verify(token, config.jwtSecret);
@@ -245,13 +225,11 @@ export const resetPassword = async (req, res, next) => {
             errorResponse(res, 'Invalid or expired reset token', undefined, 400);
             return;
         }
-        // Find user
         const user = await User.findById(decoded.userId);
         if (!user) {
             errorResponse(res, 'User not found', undefined, 404);
             return;
         }
-        // Hash new password
         const hashedPassword = await hashPassword(newPassword);
         user.password = hashedPassword;
         await user.save();
@@ -261,4 +239,3 @@ export const resetPassword = async (req, res, next) => {
         next(error);
     }
 };
-//# sourceMappingURL=authController.js.map

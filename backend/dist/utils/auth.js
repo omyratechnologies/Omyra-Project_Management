@@ -38,4 +38,3 @@ export const createAuthResponse = (user, profile) => {
         }
     };
 };
-//# sourceMappingURL=auth.js.map

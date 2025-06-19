@@ -3,7 +3,6 @@ import { notificationService } from '../services/notificationService.js';
 import { successResponse, errorResponse } from '../utils/response.js';
 import { Profile } from '../models/index.js';
 export class NotificationController {
-    // Get user's notifications with pagination and filtering
     static async getNotifications(req, res, next) {
         try {
             if (!req.user) {
@@ -56,7 +55,6 @@ export class NotificationController {
             next(error);
         }
     }
-    // Get notification summary (unread count and recent notifications)
     static async getNotificationSummary(req, res, next) {
         try {
             if (!req.user) {
@@ -85,7 +83,6 @@ export class NotificationController {
             next(error);
         }
     }
-    // Mark specific notification as read
     static async markAsRead(req, res, next) {
         try {
             if (!req.user) {
@@ -102,7 +99,6 @@ export class NotificationController {
             next(error);
         }
     }
-    // Mark all notifications as read
     static async markAllAsRead(req, res, next) {
         try {
             if (!req.user) {
@@ -117,7 +113,6 @@ export class NotificationController {
             next(error);
         }
     }
-    // Delete specific notification
     static async deleteNotification(req, res, next) {
         try {
             if (!req.user) {
@@ -137,7 +132,6 @@ export class NotificationController {
             next(error);
         }
     }
-    // Clear all notifications
     static async clearAllNotifications(req, res, next) {
         try {
             if (!req.user) {
@@ -152,7 +146,6 @@ export class NotificationController {
             next(error);
         }
     }
-    // Get notification preferences
     static async getNotificationPreferences(req, res, next) {
         try {
             if (!req.user) {
@@ -191,7 +184,6 @@ export class NotificationController {
             next(error);
         }
     }
-    // Update notification preferences
     static async updateNotificationPreferences(req, res, next) {
         try {
             if (!req.user) {
@@ -213,13 +205,11 @@ export class NotificationController {
             next(error);
         }
     }
-    // Send test notification (for testing purposes)
     static async sendTestNotification(req, res, next) {
         try {
             if (!req.user) {
                 return errorResponse(res, 'User not authenticated', undefined, 401);
             }
-            // Only allow admins to send test notifications
             const profile = await Profile.findOne({ user: req.user.id });
             if (!profile || profile.role !== 'admin') {
                 return errorResponse(res, 'Access denied. Only administrators can send test notifications.', undefined, 403);
@@ -240,13 +230,11 @@ export class NotificationController {
             next(error);
         }
     }
-    // Get notification statistics (for admin)
     static async getNotificationStats(req, res, next) {
         try {
             if (!req.user) {
                 return errorResponse(res, 'User not authenticated', undefined, 401);
             }
-            // Only allow admins to view notification statistics
             const profile = await Profile.findOne({ user: req.user.id });
             if (!profile || profile.role !== 'admin') {
                 return errorResponse(res, 'Access denied. Only administrators can view notification statistics.', undefined, 403);
@@ -272,13 +260,11 @@ export class NotificationController {
             next(error);
         }
     }
-    // Broadcast notification to all users (admin only)
     static async broadcastNotification(req, res, next) {
         try {
             if (!req.user) {
                 return errorResponse(res, 'User not authenticated', undefined, 401);
             }
-            // Only allow admins to broadcast notifications
             const profile = await Profile.findOne({ user: req.user.id });
             if (!profile || profile.role !== 'admin') {
                 return errorResponse(res, 'Access denied. Only administrators can broadcast notifications.', undefined, 403);
@@ -303,4 +289,3 @@ export class NotificationController {
         }
     }
 }
-//# sourceMappingURL=notificationController.js.map

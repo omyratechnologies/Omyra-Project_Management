@@ -5,13 +5,11 @@ export const updateMeetingAttendance = async (req, res) => {
     try {
         const { meetingId } = req.params;
         const { status, reason } = req.body;
-        // Verify meeting exists
         const meeting = await Meeting.findById(meetingId);
         if (!meeting) {
             errorResponse(res, 'Meeting not found.', undefined, 404);
             return;
         }
-        // Check if user is an attendee or admin
         const isAdmin = req.user.role === 'admin';
         const isAttendee = meeting.attendees.some(attendeeId => attendeeId.toString() === req.user.id.toString());
         if (!isAdmin && !isAttendee) {
@@ -23,14 +21,12 @@ export const updateMeetingAttendance = async (req, res) => {
             user: req.user.id
         });
         if (attendee) {
-            // Update existing attendance
             attendee.status = status;
             if (reason)
                 attendee.reason = reason;
             await attendee.save();
         }
         else {
-            // Create new attendance record
             attendee = new MeetingAttendee({
                 meeting: meetingId,
                 user: req.user.id,
@@ -68,7 +64,6 @@ export const joinMeeting = async (req, res) => {
             user: req.user.id
         });
         if (!attendee) {
-            // Create new attendance record if not exists
             attendee = new MeetingAttendee({
                 meeting: meetingId,
                 user: req.user.id,
@@ -87,13 +82,11 @@ export const joinMeeting = async (req, res) => {
 export const getMyMeetingAttendance = async (req, res) => {
     try {
         const { meetingId } = req.params;
-        // Verify meeting exists
         const meeting = await Meeting.findById(meetingId);
         if (!meeting) {
             errorResponse(res, 'Meeting not found.', undefined, 404);
             return;
         }
-        // Check if user is an attendee or admin
         const isAdmin = req.user.role === 'admin';
         const isAttendee = meeting.attendees.some(attendeeId => attendeeId.toString() === req.user.id.toString());
         if (!isAdmin && !isAttendee) {
@@ -104,7 +97,6 @@ export const getMyMeetingAttendance = async (req, res) => {
             meeting: meetingId,
             user: req.user.id
         }).populate('user', 'email profile');
-        // Return the attendance record, or null if not found
         successResponse(res, 'Meeting attendance retrieved successfully.', attendee);
     }
     catch (error) {
@@ -132,4 +124,3 @@ export const leaveMeeting = async (req, res) => {
         errorResponse(res, 'Failed to leave meeting.', error instanceof Error ? error.message : 'Unknown error', 500);
     }
 };
-//# sourceMappingURL=meetingAttendanceController.js.map

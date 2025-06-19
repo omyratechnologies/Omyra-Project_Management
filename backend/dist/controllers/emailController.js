@@ -2,7 +2,6 @@ import { emailService } from '../services/emailService.js';
 import { successResponse, errorResponse, validationErrorResponse } from '../utils/response.js';
 import { body, validationResult } from 'express-validator';
 export class EmailController {
-    // Send a custom email
     static async sendEmail(req, res) {
         try {
             const errors = validationResult(req);
@@ -31,7 +30,6 @@ export class EmailController {
             return errorResponse(res, 'Internal server error', undefined, 500);
         }
     }
-    // Send template-based email
     static async sendTemplateEmail(req, res) {
         try {
             const errors = validationResult(req);
@@ -52,7 +50,6 @@ export class EmailController {
             return errorResponse(res, error instanceof Error ? error.message : 'Internal server error', undefined, 500);
         }
     }
-    // Queue an email for later sending
     static async queueEmail(req, res) {
         try {
             const errors = validationResult(req);
@@ -79,7 +76,6 @@ export class EmailController {
             return errorResponse(res, 'Internal server error', undefined, 500);
         }
     }
-    // Get email service status
     static async getStatus(req, res) {
         try {
             const isConnected = await emailService.testConnection();
@@ -96,7 +92,6 @@ export class EmailController {
             return errorResponse(res, 'Internal server error', undefined, 500);
         }
     }
-    // Send welcome email to new user
     static async sendWelcomeEmail(req, res) {
         try {
             const { email, userName } = req.body;
@@ -116,7 +111,6 @@ export class EmailController {
             return errorResponse(res, 'Internal server error', undefined, 500);
         }
     }
-    // Send password reset email
     static async sendPasswordResetEmail(req, res) {
         try {
             const { email, userName, resetLink } = req.body;
@@ -137,7 +131,6 @@ export class EmailController {
             return errorResponse(res, 'Internal server error', undefined, 500);
         }
     }
-    // Send task assignment notification
     static async sendTaskAssignmentEmail(req, res) {
         try {
             const { email, assigneeName, projectName, taskTitle, taskDescription, dueDate, priority, taskLink } = req.body;
@@ -170,7 +163,6 @@ export class EmailController {
             return errorResponse(res, 'Internal server error', undefined, 500);
         }
     }
-    // Send team invitation email
     static async sendTeamInvitationEmail(req, res) {
         try {
             const errors = validationResult(req);
@@ -191,7 +183,6 @@ export class EmailController {
             return errorResponse(res, 'Internal server error', undefined, 500);
         }
     }
-    // Add custom email template
     static async addTemplate(req, res) {
         try {
             const errors = validationResult(req);
@@ -211,7 +202,6 @@ export class EmailController {
         }
     }
 }
-// Validation middleware
 export const emailValidation = {
     sendEmail: [
         body('to').isEmail().withMessage('Valid email address is required'),
@@ -264,4 +254,3 @@ export const emailValidation = {
         body('invitationToken').notEmpty().withMessage('Invitation token is required')
     ]
 };
-//# sourceMappingURL=emailController.js.map

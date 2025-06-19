@@ -15,11 +15,7 @@ const acceptInvitationSchema = z.object({
     token: z.string().min(1, 'Invitation token is required'),
     password: z.string().min(6, 'Password must be at least 6 characters')
 });
-// Send team invitation (authenticated)
 router.post('/send', authenticate, validateBody(sendInvitationSchema), sendTeamInvitation);
-// Accept invitation (public)
 router.post('/accept', validateBody(acceptInvitationSchema), acceptInvitation);
-// Get invitation details (public)
 router.get('/details/:token', getInvitationDetails);
 export default router;
-//# sourceMappingURL=invitations.js.map

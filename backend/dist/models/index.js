@@ -12,4 +12,3 @@ export { Client } from './Client.js';
 export { Invitation } from './Invitation.js';
 export { ActivityLog } from './ActivityLog.js';
 export { Notification } from './Notification.js';
-//# sourceMappingURL=index.js.map

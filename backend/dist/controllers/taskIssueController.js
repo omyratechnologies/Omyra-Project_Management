@@ -5,7 +5,6 @@ export const createTaskIssue = async (req, res) => {
     try {
         const { taskId } = req.params;
         const { title, description, type, priority } = req.body;
-        // Verify task exists
         const task = await Task.findById(taskId);
         if (!task) {
             errorResponse(res, 'Task not found.', undefined, 404);
@@ -60,7 +59,6 @@ export const updateTaskIssue = async (req, res) => {
             errorResponse(res, 'Task issue not found.', undefined, 404);
             return;
         }
-        // Handle resolution
         const finalUpdateData = { ...updateData };
         if (updateData.status === 'resolved' && updateData.resolution) {
             finalUpdateData.resolvedBy = req.user.id;
@@ -101,7 +99,6 @@ export const deleteTaskIssue = async (req, res) => {
             errorResponse(res, 'Task issue not found.', undefined, 404);
             return;
         }
-        // Only admin or the reporter can delete the issue
         if (req.user.role !== 'admin' && taskIssue.reportedBy.toString() !== req.user.id) {
             errorResponse(res, 'Access denied. You can only delete your own issues.', undefined, 403);
             return;
@@ -114,4 +111,3 @@ export const deleteTaskIssue = async (req, res) => {
         errorResponse(res, 'Failed to delete task issue.', error instanceof Error ? error.message : 'Unknown error', 500);
     }
 };
-//# sourceMappingURL=taskIssueController.js.map

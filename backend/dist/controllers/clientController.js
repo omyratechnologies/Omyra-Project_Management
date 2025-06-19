@@ -5,39 +5,32 @@ import { emailService } from '../services/emailService.js';
 import { config } from '../config/environment.js';
 export const createClient = async (req, res, next) => {
     try {
-        // Only admins and accountants can create client accounts
         if (!req.user || !['admin', 'accountant'].includes(req.user.role)) {
             errorResponse(res, 'Access denied. Only administrators and accountants can create client accounts.', undefined, 403);
             return;
         }
         const { email, password, fullName, companyName, industry, website, phone, address, contactPerson, billingInfo, notes } = req.body;
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             errorResponse(res, 'User already exists with this email', undefined, 400);
             return;
         }
-        // Check if client already exists with same company email
         const existingClient = await Client.findOne({ 'contactPerson.email': contactPerson.email });
         if (existingClient) {
             errorResponse(res, 'Client already exists with this contact email', undefined, 400);
             return;
         }
-        // Hash password
         const hashedPassword = await hashPassword(password);
-        // Create user
         const user = new User({
             email,
             password: hashedPassword
         });
-        // Create profile with client role
         const profile = new Profile({
             user: user.id,
             fullName,
             email,
             role: 'client'
         });
-        // Create client record - active by default when created by admin/accountant
         const client = new Client({
             user: user.id,
             companyName,
@@ -48,20 +41,16 @@ export const createClient = async (req, res, next) => {
             contactPerson,
             billingInfo,
             notes,
-            status: 'active' // No approval needed for admin/accountant created clients
+            status: 'active'
         });
-        // Save all documents
         await user.save();
         await profile.save();
         await client.save();
-        // Update user with profile reference
         user.profile = profile.id;
         await user.save();
-        // Send welcome email (don't wait for it to complete)
         emailService.sendWelcomeEmail(email, { fullName, role: 'client' }).catch((error) => {
             console.error('Failed to send welcome email:', error);
         });
-        // Populate the client data
         await client.populate(['user']);
         successResponse(res, 'Client account created successfully', {
             client,
@@ -76,33 +65,27 @@ export const createClient = async (req, res, next) => {
 export const registerClient = async (req, res, next) => {
     try {
         const { email, password, fullName, companyName, industry, website, phone, address, contactPerson, billingInfo, notes } = req.body;
-        // Check if user already exists
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             errorResponse(res, 'User already exists with this email', undefined, 400);
             return;
         }
-        // Check if client already exists with same company email
         const existingClient = await Client.findOne({ 'contactPerson.email': contactPerson.email });
         if (existingClient) {
             errorResponse(res, 'Client already exists with this contact email', undefined, 400);
             return;
         }
-        // Hash password
         const hashedPassword = await hashPassword(password);
-        // Create user
         const user = new User({
             email,
             password: hashedPassword
         });
-        // Create profile with client role
         const profile = new Profile({
             user: user.id,
             fullName,
             email,
             role: 'client'
         });
-        // Create client record
         const client = new Client({
             user: user.id,
             companyName,
@@ -113,20 +96,16 @@ export const registerClient = async (req, res, next) => {
             contactPerson,
             billingInfo,
             notes,
-            status: 'pending' // Default to pending until approved
+            status: 'pending'
         });
-        // Save all documents
         await user.save();
         await profile.save();
         await client.save();
-        // Update user with profile reference
         user.profile = profile.id;
         await user.save();
-        // Send welcome email (don't wait for it to complete)
         emailService.sendWelcomeEmail(email, { fullName, role: 'client' }).catch((error) => {
             console.error('Failed to send welcome email:', error);
         });
-        // Create auth response for immediate login
         const authResponse = createAuthResponse(user, profile);
         successResponse(res, 'Client registered successfully', {
             ...authResponse,
@@ -140,7 +119,6 @@ export const registerClient = async (req, res, next) => {
 };
 export const getClients = async (req, res, next) => {
     try {
-        // Only admins and accountants can view all clients
         if (!req.user || !['admin', 'accountant'].includes(req.user.role)) {
             errorResponse(res, 'Access denied. Only administrators and accountants can view clients.', undefined, 403);
             return;
@@ -173,7 +151,6 @@ export const getClients = async (req, res, next) => {
 export const getClient = async (req, res, next) => {
     try {
         const { clientId } = req.params;
-        // Clients can only view their own data, others need admin/PM role
         if (req.user?.role === 'client') {
             const client = await Client.findOne({ user: req.user.id })
                 .populate(['user', 'projects']);
@@ -184,7 +161,6 @@ export const getClient = async (req, res, next) => {
             successResponse(res, 'Client profile retrieved successfully', client);
             return;
         }
-        // For admins and project managers
         if (!['admin', 'project_manager'].includes(req.user?.role || '')) {
             errorResponse(res, 'Access denied.', undefined, 403);
             return;
@@ -205,14 +181,12 @@ export const updateClient = async (req, res, next) => {
     try {
         const { clientId } = req.params;
         const updateData = req.body;
-        // Clients can only update their own data, others need admin/PM role
         if (req.user?.role === 'client') {
             const client = await Client.findOne({ user: req.user.id });
             if (!client || client.id?.toString() !== clientId) {
                 errorResponse(res, 'Access denied. You can only update your own client profile.', undefined, 403);
                 return;
             }
-            // Clients cannot change their status
             delete updateData.status;
         }
         else if (!['admin', 'project_manager'].includes(req.user?.role || '')) {
@@ -232,7 +206,6 @@ export const updateClient = async (req, res, next) => {
 };
 export const approveClient = async (req, res, next) => {
     try {
-        // Only admins can approve clients
         if (!req.user || req.user.role !== 'admin') {
             errorResponse(res, 'Access denied. Only administrators can approve clients.', undefined, 403);
             return;
@@ -243,7 +216,6 @@ export const approveClient = async (req, res, next) => {
             errorResponse(res, 'Client not found', undefined, 404);
             return;
         }
-        // Send approval email
         if (client.user && 'email' in client.user) {
             const emailMessage = {
                 from: config.emailFrom,
@@ -264,7 +236,6 @@ export const approveClient = async (req, res, next) => {
 };
 export const deactivateClient = async (req, res, next) => {
     try {
-        // Only admins can deactivate clients
         if (!req.user || req.user.role !== 'admin') {
             errorResponse(res, 'Access denied. Only administrators can deactivate clients.', undefined, 403);
             return;
@@ -283,7 +254,6 @@ export const deactivateClient = async (req, res, next) => {
 };
 export const deleteClient = async (req, res, next) => {
     try {
-        // Only admins can delete clients
         if (!req.user || req.user.role !== 'admin') {
             errorResponse(res, 'Access denied. Only administrators can delete clients.', undefined, 403);
             return;
@@ -294,7 +264,6 @@ export const deleteClient = async (req, res, next) => {
             errorResponse(res, 'Client not found', undefined, 404);
             return;
         }
-        // Delete client, profile, and user
         await Client.findByIdAndDelete(clientId);
         await Profile.findOneAndDelete({ user: client.user });
         await User.findByIdAndDelete(client.user);
@@ -322,37 +291,27 @@ export const getMyClientProfile = async (req, res, next) => {
         next(error);
     }
 };
-// Client Dashboard Methods
 export const getClientDashboardStats = async (req, res, next) => {
     try {
-        // Only clients can access this endpoint
         if (!req.user || req.user.role !== 'client') {
             errorResponse(res, 'Access denied. Only clients can access this endpoint.', undefined, 403);
             return;
         }
         const userId = req.user.id;
-        // Import required models
         const { Project, Task, Meeting, ClientFeedback, Client, ProjectMember } = await import('../models/index.js');
-        // First, find the Client document for this user
         const clientDoc = await Client.findOne({ user: userId });
         const clientId = clientDoc?._id;
-        // Find projects where user is a member
         const memberProjects = await ProjectMember.find({ user: userId }).distinct('project');
-        // Get projects where client is assigned or user is a member
         const projects = await Project.find({
             $or: [
-                { client: clientId }, // Projects assigned to the client
-                { _id: { $in: memberProjects } } // Projects where user is a member
+                { client: clientId },
+                { _id: { $in: memberProjects } }
             ]
         }).populate('members');
         const projectIds = projects.map(p => p._id);
-        // Get tasks for client's projects
         const tasks = await Task.find({ project: { $in: projectIds } });
-        // Get meetings for client's projects
         const meetings = await Meeting.find({ project: { $in: projectIds } });
-        // Get client feedback
         const feedback = await ClientFeedback.find({ client: clientId });
-        // Calculate stats
         const totalProjects = projects.length;
         const activeProjects = projects.filter(p => p.status === 'active').length;
         const completedProjects = projects.filter(p => p.status === 'completed').length;
@@ -362,17 +321,15 @@ export const getClientDashboardStats = async (req, res, next) => {
         const completionRate = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
         const feedbackSubmitted = feedback.length;
         const activeFeedbackCount = feedback.filter(f => f.status === 'open').length;
-        const meetingsAttended = meetings.length; // Simplified - could be more detailed with attendance tracking
-        // Calculate project health (simplified)
+        const meetingsAttended = meetings.length;
         const onTrackProjects = projects.filter(p => {
             if (p.status === 'completed')
                 return true;
             if (p.endDate && new Date(p.endDate) < new Date())
-                return false; // Overdue
-            return true; // On track or no deadline
+                return false;
+            return true;
         }).length;
         const overallHealth = totalProjects > 0 ? Math.round((onTrackProjects / totalProjects) * 100) : 100;
-        // Recent activity (last 30 days)
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
         const recentActivity = [
@@ -403,8 +360,8 @@ export const getClientDashboardStats = async (req, res, next) => {
             meetingsAttended,
             overallHealth,
             onTrackProjects,
-            completedMilestones: completedTasks, // Simplified
-            avgResponseTime: '2-3 hours', // Hardcoded for now
+            completedMilestones: completedTasks,
+            avgResponseTime: '2-3 hours',
             recentActivity
         };
         successResponse(res, 'Client dashboard stats retrieved successfully', stats);
@@ -415,48 +372,42 @@ export const getClientDashboardStats = async (req, res, next) => {
 };
 export const getClientProjects = async (req, res, next) => {
     try {
-        // Only clients can access this endpoint
         if (!req.user || req.user.role !== 'client') {
             errorResponse(res, 'Access denied. Only clients can access this endpoint.', undefined, 403);
             return;
         }
         const userId = req.user.id;
         const { Project, Task, Client, ProjectMember } = await import('../models/index.js');
-        // First, find the Client document for this user
         const clientDoc = await Client.findOne({ user: userId });
         const clientId = clientDoc?._id;
-        // Find projects where user is a member
         const memberProjects = await ProjectMember.find({ user: userId }).distinct('project');
-        // Get projects where client is assigned or a member
         const projects = await Project.find({
             $or: [
-                { client: clientId }, // Projects assigned to the client
-                { _id: { $in: memberProjects } } // Projects where user is a member
+                { client: clientId },
+                { _id: { $in: memberProjects } }
             ]
         })
             .populate('createdBy', 'profile')
             .populate('members')
             .populate('client', 'contactPerson companyName')
             .sort({ updatedAt: -1 });
-        // Get tasks for each project to calculate progress
         const projectsWithProgress = await Promise.all(projects.map(async (project) => {
             const tasks = await Task.find({ project: project._id });
             const completedTasks = tasks.filter(t => t.status === 'done').length;
             const progress = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0;
-            // Calculate health based on progress and timeline
             let health = 100;
             if (project.endDate && new Date(project.endDate) < new Date() && project.status !== 'completed') {
-                health = 30; // Overdue
+                health = 30;
             }
             else if (progress < 50 && project.status === 'active') {
-                health = 60; // Behind schedule
+                health = 60;
             }
             return {
                 ...project.toObject(),
                 progress,
                 health,
-                manager: project.createdBy, // Assuming creator is manager
-                milestones: [], // Simplified - could be implemented with Task milestones
+                manager: project.createdBy,
+                milestones: [],
                 members: project.members || []
             };
         }));
@@ -468,45 +419,36 @@ export const getClientProjects = async (req, res, next) => {
 };
 export const getClientRecentActivity = async (req, res, next) => {
     try {
-        // Only clients can access this endpoint
         if (!req.user || req.user.role !== 'client') {
             errorResponse(res, 'Access denied. Only clients can access this endpoint.', undefined, 403);
             return;
         }
         const userId = req.user.id;
         const { Project, Task, Meeting, ClientFeedback, Client, ProjectMember } = await import('../models/index.js');
-        // First, find the Client document for this user
         const clientDoc = await Client.findOne({ user: userId });
         const clientId = clientDoc?._id;
-        // Find projects where user is a member
         const memberProjects = await ProjectMember.find({ user: userId }).distinct('project');
-        // Get client's projects
         const projects = await Project.find({
             $or: [
-                { client: clientId }, // Projects assigned to the client
-                { _id: { $in: memberProjects } } // Projects where user is a member
+                { client: clientId },
+                { _id: { $in: memberProjects } }
             ]
         });
         const projectIds = projects.map(p => p._id);
-        // Get recent activity from last 30 days
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        // Get recent tasks
         const recentTasks = await Task.find({
             project: { $in: projectIds },
             updatedAt: { $gte: thirtyDaysAgo }
         }).populate('project', 'title').sort({ updatedAt: -1 }).limit(20);
-        // Get recent feedback
         const recentFeedback = await ClientFeedback.find({
             client: clientId,
             updatedAt: { $gte: thirtyDaysAgo }
         }).populate('project', 'title').sort({ updatedAt: -1 }).limit(10);
-        // Get recent meetings
         const recentMeetings = await Meeting.find({
             project: { $in: projectIds },
             updatedAt: { $gte: thirtyDaysAgo }
         }).populate('project', 'title').sort({ updatedAt: -1 }).limit(10);
-        // Combine and format activities
         const activities = [
             ...recentTasks.map(task => ({
                 id: task._id.toString(),
@@ -536,7 +478,6 @@ export const getClientRecentActivity = async (req, res, next) => {
                 project: meeting.project?.title || 'General'
             }))
         ];
-        // Sort by date and limit to 20 most recent
         const sortedActivities = activities
             .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
             .slice(0, 20);
@@ -548,14 +489,12 @@ export const getClientRecentActivity = async (req, res, next) => {
 };
 export const getClientFeedback = async (req, res, next) => {
     try {
-        // Only clients can access this endpoint
         if (!req.user || req.user.role !== 'client') {
             errorResponse(res, 'Access denied. Only clients can access this endpoint.', undefined, 403);
             return;
         }
         const clientId = req.user.id;
         const { ClientFeedback } = await import('../models/index.js');
-        // Get all feedback for this client
         const feedback = await ClientFeedback.find({ client: clientId })
             .populate('project', 'title')
             .sort({ updatedAt: -1 });
@@ -580,4 +519,3 @@ export const getClientFeedback = async (req, res, next) => {
         next(error);
     }
 };
-//# sourceMappingURL=clientController.js.map

@@ -52,9 +52,7 @@ const invitationSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-// Index for efficient queries
 invitationSchema.index({ token: 1 });
 invitationSchema.index({ email: 1, status: 1 });
 invitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 export const Invitation = mongoose.model('Invitation', invitationSchema);
-//# sourceMappingURL=Invitation.js.map

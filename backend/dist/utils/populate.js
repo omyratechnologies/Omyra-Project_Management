@@ -1,4 +1,3 @@
-// Utility functions for safe population of user fields
 export const safeUserPopulate = {
     path: 'user',
     select: '-password',
@@ -34,4 +33,3 @@ export const safeMemberPopulate = {
         }
     }
 };
-//# sourceMappingURL=populate.js.map

@@ -10,7 +10,6 @@ export const connectDatabase = async () => {
         process.exit(1);
     }
 };
-// Handle connection events
 mongoose.connection.on('connected', () => {
     console.log('📡 MongoDB connected');
 });
@@ -20,10 +19,8 @@ mongoose.connection.on('error', (error) => {
 mongoose.connection.on('disconnected', () => {
     console.log('📡 MongoDB disconnected');
 });
-// Handle app termination
 process.on('SIGINT', async () => {
     await mongoose.connection.close();
     console.log('📡 MongoDB connection closed due to app termination');
     process.exit(0);
 });
-//# sourceMappingURL=database.js.map

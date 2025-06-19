@@ -44,9 +44,7 @@ const meetingSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-// Index for efficient queries
 meetingSchema.index({ project: 1, scheduledAt: 1 });
 meetingSchema.index({ attendees: 1, scheduledAt: 1 });
 meetingSchema.index({ organizer: 1, scheduledAt: 1 });
 export const Meeting = mongoose.model('Meeting', meetingSchema);
-//# sourceMappingURL=Meeting.js.map

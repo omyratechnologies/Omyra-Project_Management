@@ -14,4 +14,3 @@ router.put('/password', authenticate, updatePassword);
 router.get('/preferences', authenticate, getPreferences);
 router.put('/preferences', authenticate, updatePreferences);
 export default router;
-//# sourceMappingURL=auth.js.map

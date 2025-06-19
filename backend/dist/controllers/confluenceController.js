@@ -31,7 +31,6 @@ export const getConfluencePages = async (req, res) => {
         const { type, projectId, status, tags, assignedToMe } = req.query;
         const userRole = req.user.role;
         const filter = {};
-        // Apply filters
         if (type)
             filter.type = type;
         if (projectId)
@@ -42,22 +41,11 @@ export const getConfluencePages = async (req, res) => {
             filter.tags = { $in: Array.isArray(tags) ? tags : [tags] };
         if (assignedToMe === 'true')
             filter.assignedTo = req.user.id;
-        // Apply permission filters based on user role and assignment
-        // Permission rules:
-        // - Admins can see all pages
-        // - Non-admins can only see:
-        //   1. Public pages
-        //   2. Pages they have view permissions for
-        //   3. Pages they created themselves
-        //   4. Pages assigned to them
-        // - Non-admins CANNOT see unassigned pages created by others
         let permissionFilter;
         if (userRole === 'admin') {
-            // Admins can see all pages
             permissionFilter = {};
         }
         else {
-            // Non-admins can only see specific pages
             permissionFilter = {
                 $or: [
                     { isPublic: true },
@@ -95,8 +83,6 @@ export const getConfluencePage = async (req, res) => {
             errorResponse(res, 'Confluence page not found.', undefined, 404);
             return;
         }
-        // Check view permissions
-        // Handle assignedTo and createdBy fields which can be populated or just ObjectIds
         const assignedToId = page.assignedTo ?
             (typeof page.assignedTo === 'object' && page.assignedTo._id ?
                 page.assignedTo._id.toString() :
@@ -131,7 +117,6 @@ export const updateConfluencePage = async (req, res) => {
             errorResponse(res, 'Confluence page not found.', undefined, 404);
             return;
         }
-        // Check edit permissions
         const hasEditPermission = page.editPermissions.includes(userRole) ||
             page.createdBy.toString() === req.user.id ||
             userRole === 'admin';
@@ -139,7 +124,6 @@ export const updateConfluencePage = async (req, res) => {
             errorResponse(res, 'Access denied. You do not have permission to edit this page.', undefined, 403);
             return;
         }
-        // Increment version and update last modified info
         const finalUpdateData = {
             ...updateData,
             lastModifiedBy: req.user.id,
@@ -162,7 +146,6 @@ export const deleteConfluencePage = async (req, res) => {
             errorResponse(res, 'Confluence page not found.', undefined, 404);
             return;
         }
-        // Only admin or creator can delete
         if (userRole !== 'admin' && page.createdBy.toString() !== req.user.id) {
             errorResponse(res, 'Access denied. You can only delete pages you created.', undefined, 403);
             return;
@@ -178,8 +161,6 @@ export const deleteConfluencePage = async (req, res) => {
 export const getPageVersions = async (req, res) => {
     try {
         const { pageId } = req.params;
-        // For this simplified implementation, we'll just return the current page
-        // In a real implementation, you'd want to store page history
         const page = await ConfluencePage.findById(pageId)
             .populate('createdBy', 'email profile')
             .populate('lastModifiedBy', 'email profile');
@@ -200,4 +181,3 @@ export const getPageVersions = async (req, res) => {
         errorResponse(res, 'Failed to retrieve page versions.', error instanceof Error ? error.message : 'Unknown error', 500);
     }
 };
-//# sourceMappingURL=confluenceController.js.map

@@ -29,7 +29,5 @@ const meetingAttendeeSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-// Ensure one record per user per meeting
 meetingAttendeeSchema.index({ meeting: 1, user: 1 }, { unique: true });
 export const MeetingAttendee = mongoose.model('MeetingAttendee', meetingAttendeeSchema);
-//# sourceMappingURL=MeetingAttendee.js.map

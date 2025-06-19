@@ -68,7 +68,7 @@ const NotificationSchema = new Schema({
     },
     expiresAt: {
         type: Date,
-        default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        default: () => new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         index: { expireAfterSeconds: 0 }
     }
 }, {
@@ -76,21 +76,17 @@ const NotificationSchema = new Schema({
     toJSON: { virtuals: true },
     toObject: { virtuals: true }
 });
-// Compound indexes for efficient queries
 NotificationSchema.index({ userId: 1, read: 1, createdAt: -1 });
 NotificationSchema.index({ userId: 1, type: 1, createdAt: -1 });
 NotificationSchema.index({ userId: 1, priority: 1, createdAt: -1 });
-// Virtual for checking if notification is recent (within last 24 hours)
 NotificationSchema.virtual('isRecent').get(function () {
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     return this.createdAt > oneDayAgo;
 });
-// Method to mark as read
 NotificationSchema.methods.markAsRead = function () {
     this.read = true;
     return this.save();
 };
-// Static method to create notification
 NotificationSchema.statics.createNotification = async function (notificationData) {
     const notification = new this(notificationData);
     await notification.save();
@@ -100,7 +96,6 @@ NotificationSchema.statics.createNotification = async function (notificationData
         { path: 'metadata.meetingId', select: 'title' }
     ]);
 };
-// Static method to get user notifications with pagination
 NotificationSchema.statics.getUserNotifications = async function (userId, options = {}) {
     const { page = 1, limit = 20, unreadOnly = false, type, priority } = options;
     const skip = (page - 1) * limit;
@@ -121,20 +116,16 @@ NotificationSchema.statics.getUserNotifications = async function (userId, option
         .skip(skip)
         .limit(limit);
 };
-// Static method to mark all notifications as read for a user
 NotificationSchema.statics.markAllAsRead = async function (userId) {
     return this.updateMany({ userId, read: false }, { read: true, updatedAt: new Date() });
 };
-// Static method to get unread count
 NotificationSchema.statics.getUnreadCount = async function (userId) {
     return this.countDocuments({ userId, read: false });
 };
-// Pre-save middleware to set default values
 NotificationSchema.pre('save', function (next) {
     if (this.isNew && !this.expiresAt) {
-        this.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        this.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
     }
     next();
 });
 export const Notification = mongoose.model('Notification', NotificationSchema);
-//# sourceMappingURL=Notification.js.map

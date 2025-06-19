@@ -86,9 +86,7 @@ const clientSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-// Index for faster queries
 clientSchema.index({ 'contactPerson.email': 1 });
 clientSchema.index({ companyName: 1 });
 clientSchema.index({ status: 1 });
 export const Client = mongoose.model('Client', clientSchema);
-//# sourceMappingURL=Client.js.map

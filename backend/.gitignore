@@ -14,3 +14,16 @@ build/
 
 # MongoDB data
 data/
+
+# Environment variables
+.env
+# Logs
+logs/
+# Temporary files
+tmp/
+# IDE specific files
+.vscode/
+# OS generated files
+.DS_Store
+# Coverage reports
+coverage/

@@ -6,4 +6,3 @@ const router = Router();
 router.get('/settings', authenticate, isAdmin, getCompanySettings);
 router.put('/settings', authenticate, isAdmin, updateCompanySettings);
 export default router;
-//# sourceMappingURL=company.js.map

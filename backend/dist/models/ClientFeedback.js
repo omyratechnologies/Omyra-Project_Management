@@ -55,9 +55,7 @@ const clientFeedbackSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-// Indexes for efficient queries
 clientFeedbackSchema.index({ project: 1, status: 1 });
 clientFeedbackSchema.index({ client: 1 });
 clientFeedbackSchema.index({ assignedTo: 1 });
 export const ClientFeedback = mongoose.model('ClientFeedback', clientFeedbackSchema);
-//# sourceMappingURL=ClientFeedback.js.map

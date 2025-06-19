@@ -4,10 +4,8 @@ import { hashPassword } from '../utils/auth.js';
 import { config } from '../config/environment.js';
 const seedData = async () => {
     try {
-        // Connect to database
         await mongoose.connect(config.mongoUri);
         console.log('📡 Connected to MongoDB for seeding...');
-        // Clear existing data
         await Promise.all([
             User.deleteMany({}),
             Profile.deleteMany({}),
@@ -16,9 +14,7 @@ const seedData = async () => {
             Task.deleteMany({})
         ]);
         console.log('🗑️  Cleared existing data...');
-        // Create users and profiles
         const hashedPassword = await hashPassword('password123');
-        // Admin user
         const adminUser = new User({
             email: 'admin@omyra.com',
             password: hashedPassword
@@ -33,7 +29,6 @@ const seedData = async () => {
         await adminProfile.save();
         adminUser.profile = adminProfile.id;
         await adminUser.save();
-        // Project Manager user
         const pmUser = new User({
             email: 'pm@omyra.com',
             password: hashedPassword
@@ -48,7 +43,6 @@ const seedData = async () => {
         await pmProfile.save();
         pmUser.profile = pmProfile.id;
         await pmUser.save();
-        // Team Member users
         const member1User = new User({
             email: 'developer@omyra.com',
             password: hashedPassword
@@ -78,7 +72,6 @@ const seedData = async () => {
         member2User.profile = member2Profile.id;
         await member2User.save();
         console.log('👥 Created users and profiles...');
-        // Create projects
         const project1 = new Project({
             title: 'E-commerce Platform',
             description: 'Modern e-commerce platform with advanced features',
@@ -107,24 +100,18 @@ const seedData = async () => {
         });
         await project3.save();
         console.log('📁 Created projects...');
-        // Create project members
         const projectMembers = [
-            // Project 1 members
             { project: project1.id, user: pmUser.id, roleInProject: 'owner' },
             { project: project1.id, user: member1User.id, roleInProject: 'developer' },
             { project: project1.id, user: member2User.id, roleInProject: 'designer' },
-            // Project 2 members
             { project: project2.id, user: pmUser.id, roleInProject: 'owner' },
             { project: project2.id, user: member1User.id, roleInProject: 'developer' },
-            // Project 3 members
             { project: project3.id, user: adminUser.id, roleInProject: 'owner' },
             { project: project3.id, user: member1User.id, roleInProject: 'developer' }
         ];
         await ProjectMember.insertMany(projectMembers);
         console.log('👥 Created project memberships...');
-        // Create tasks
         const tasks = [
-            // Project 1 tasks
             {
                 title: 'Setup Database Schema',
                 description: 'Design and implement the database schema for the e-commerce platform',
@@ -165,7 +152,6 @@ const seedData = async () => {
                 createdBy: pmUser.id,
                 dueDate: new Date('2024-03-01')
             },
-            // Project 2 tasks
             {
                 title: 'Mobile App Architecture',
                 description: 'Define the overall architecture for the mobile application',
@@ -186,7 +172,6 @@ const seedData = async () => {
                 createdBy: pmUser.id,
                 dueDate: new Date('2024-04-01')
             },
-            // Project 3 tasks
             {
                 title: 'API Documentation Audit',
                 description: 'Review and update all API documentation',
@@ -240,4 +225,3 @@ const seedData = async () => {
     }
 };
 seedData();
-//# sourceMappingURL=seed.js.map

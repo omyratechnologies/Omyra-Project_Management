@@ -73,4 +73,3 @@ const profileSchema = new Schema({
     timestamps: true
 });
 export const Profile = mongoose.model('Profile', profileSchema);
-//# sourceMappingURL=Profile.js.map
