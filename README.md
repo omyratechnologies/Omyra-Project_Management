@@ -15,7 +15,27 @@ A comprehensive project management system built with Node.js, Express, MongoDB, 
 - **Email Notifications** - Automated email alerts
 - **SSL Security** - HTTPS encryption support
 
-## 🚀 Quick Start
+## � Project Structure
+
+```
+omyra-project-nexus/
+├── 📚 docs/                    # All documentation organized by category
+│   ├── ci-cd/                  # CI/CD pipeline and GitHub Actions docs
+│   ├── deployment/             # Production deployment guides
+│   ├── troubleshooting/        # Error diagnosis and resolution
+│   └── guides/                 # User guides and feature documentation
+├── 🛠️ scripts/                # Operational scripts organized by function
+│   ├── deployment/             # Deployment and server management
+│   ├── ssl/                    # SSL certificate management
+│   ├── testing/                # System testing and validation
+│   └── monitoring/             # System monitoring and health checks
+├── 🖥️ backend/                # Node.js/Express API server
+├── 🌐 frontend/               # React frontend application
+├── 🔧 nginx/                  # Nginx configuration files
+└── 🐳 docker-compose.production.yml  # Production Docker setup
+```
+
+## �🚀 Quick Start
 
 ### Development Setup
 
@@ -27,7 +47,7 @@ A comprehensive project management system built with Node.js, Express, MongoDB, 
 
 2. **Generate SSL certificates**
    ```bash
-   ./generate-ssl-certs.sh
+   ./scripts/ssl/generate-ssl-certs.sh
    ```
 
 3. **Set up environment variables**
@@ -38,7 +58,7 @@ A comprehensive project management system built with Node.js, Express, MongoDB, 
 
 4. **Deploy with Docker**
    ```bash
-   ./deploy.sh
+   ./scripts/deployment/deploy.sh
    ```
 
 5. **Access the application**
@@ -190,6 +210,35 @@ curl -I https://localhost --insecure
 - **Rate Limiting** - API abuse prevention
 - **Security Headers** - XSS, CSRF protection
 - **CORS Configuration** - Cross-origin security
+
+## 📚 Documentation & Scripts
+
+### 📖 Documentation
+All documentation is organized in the `docs/` directory:
+
+- **📋 [docs/README.md](docs/README.md)** - Complete documentation index
+- **🚀 [docs/ci-cd/](docs/ci-cd/)** - CI/CD pipeline and GitHub Actions
+- **🏗️ [docs/deployment/](docs/deployment/)** - Production deployment guides  
+- **🔧 [docs/troubleshooting/](docs/troubleshooting/)** - Error diagnosis and fixes
+- **📖 [docs/guides/](docs/guides/)** - User guides and feature docs
+
+### 🛠️ Scripts
+All operational scripts are organized in the `scripts/` directory:
+
+- **📋 [scripts/README.md](scripts/README.md)** - Complete scripts index
+- **🚀 [scripts/deployment/](scripts/deployment/)** - Deployment automation
+- **🔒 [scripts/ssl/](scripts/ssl/)** - SSL certificate management
+- **🧪 [scripts/testing/](scripts/testing/)** - System testing and validation
+- **📊 [scripts/monitoring/](scripts/monitoring/)** - System monitoring
+
+### 🎯 Quick Navigation
+| Need to... | Check... |
+|------------|----------|
+| Deploy to production | [docs/deployment/](docs/deployment/) + [scripts/deployment/](scripts/deployment/) |
+| Fix system errors | [docs/troubleshooting/](docs/troubleshooting/) + [scripts/testing/](scripts/testing/) |
+| Set up SSL | [docs/troubleshooting/SSL-SETUP-GUIDE.md](docs/troubleshooting/SSL-SETUP-GUIDE.md) + [scripts/ssl/](scripts/ssl/) |
+| Configure CI/CD | [docs/ci-cd/](docs/ci-cd/) |
+| Test the system | [docs/guides/TESTING-GUIDE.md](docs/guides/TESTING-GUIDE.md) + [scripts/testing/](scripts/testing/) |
 
 ## 📖 Documentation
 
