@@ -1,0 +1,120 @@
+name: 🔍 Server Diagnostics
+
+on:
+  workflow_dispatch:  # Manual trigger only
+  
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Server Diagnostics
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.HOST || '4.240.101.137' }}
+        username: ${{ secrets.USERNAME || 'azureuser' }}  
+        key: ${{ secrets.SSH_KEY }}
+        port: 22
+        command_timeout: 10m
+        script: |
+          cd /home/azureuser/Omyra-Project_Management
+          
+          echo "🔍 COMPREHENSIVE SERVER DIAGNOSTICS"
+          echo "====================================="
+          
+          # Pull latest diagnostic tools
+          git pull origin main || echo "Git pull failed"
+          chmod +x diagnose-500-error.sh || echo "Chmod failed"
+          
+          # System status
+          echo ""
+          echo "📊 SYSTEM STATUS:"
+          echo "Disk space:"
+          df -h
+          echo ""
+          echo "Memory usage:"
+          free -h
+          echo ""
+          echo "System load:"
+          uptime
+          
+          # Docker status
+          echo ""
+          echo "🐳 DOCKER STATUS:"
+          echo "Docker service:"
+          systemctl status docker --no-pager -l
+          echo ""
+          echo "Docker containers:"
+          docker ps -a
+          echo ""
+          echo "Docker images:"
+          docker images
+          
+          # Container logs
+          echo ""
+          echo "📋 CONTAINER LOGS:"
+          echo ""
+          echo "=== NGINX LOGS ==="
+          docker logs omyra-project_management-nginx-1 --tail 20 2>&1 || echo "No nginx container"
+          echo ""
+          echo "=== BACKEND LOGS ==="
+          docker logs omyra-project_management-backend-1 --tail 20 2>&1 || echo "No backend container"
+          echo ""
+          echo "=== FRONTEND LOGS ==="
+          docker logs omyra-project_management-frontend-1 --tail 20 2>&1 || echo "No frontend container"
+          echo ""
+          echo "=== MONGODB LOGS ==="
+          docker logs omyra-project_management-mongodb-1 --tail 20 2>&1 || echo "No mongodb container"
+          
+          # Network and connectivity
+          echo ""
+          echo "🌐 NETWORK STATUS:"
+          echo "Port 80 status:"
+          netstat -tlnp | grep :80 || echo "Port 80 not listening"
+          echo ""
+          echo "Port 443 status:"
+          netstat -tlnp | grep :443 || echo "Port 443 not listening"
+          echo ""
+          echo "Internal connectivity test:"
+          curl -I http://localhost || echo "Local HTTP failed"
+          curl -I http://localhost:80 || echo "Local port 80 failed"
+          
+          # Configuration files
+          echo ""
+          echo "⚙️ CONFIGURATION:"
+          echo "Environment file:"
+          cat .env | head -10 || echo "No .env file"
+          echo ""
+          echo "Docker compose file exists:"
+          ls -la docker-compose.production.yml || echo "No docker-compose file"
+          
+          # SSL certificates
+          echo ""
+          echo "🔒 SSL STATUS:"
+          echo "SSL certificates:"
+          ls -la ssl/certs/ || echo "No SSL certs directory"
+          
+          # Nginx configuration test
+          echo ""
+          echo "🔧 NGINX CONFIG TEST:"
+          docker exec omyra-project_management-nginx-1 nginx -t 2>&1 || echo "Nginx config test failed"
+          
+          # Direct service tests
+          echo ""
+          echo "🧪 DIRECT SERVICE TESTS:"
+          echo "Backend health (internal):"
+          docker exec omyra-project_management-backend-1 curl -f http://localhost:5000/health 2>/dev/null || echo "Backend internal health failed"
+          echo ""
+          echo "Frontend (internal):"
+          docker exec omyra-project_management-frontend-1 curl -I http://localhost 2>/dev/null || echo "Frontend internal failed"
+          
+          # Current processes
+          echo ""
+          echo "📊 RUNNING PROCESSES:"
+          ps aux | grep -E "(nginx|node|mongo)" | grep -v grep || echo "No relevant processes"
+          
+          echo ""
+          echo "🔍 DIAGNOSTIC COMPLETE"
+          echo "Check the logs above for error details"
