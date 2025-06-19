@@ -1,43 +1,41 @@
 #!/bin/bash
 
-# Production Deployment Script
-# Make sure to set your environment variables before running this script
+# ------------------------------------------------------------------------------
+# 🛠️ Omyra Project Management - Deployment Script
+# ------------------------------------------------------------------------------
 
-set -e
+echo "🚀 Starting Deployment..."
 
-echo "🚀 Starting production deployment..."
-
-# Check if required environment variables are set
-if [ -z "$MONGODB_URI" ] || [ -z "$JWT_SECRET" ] || [ -z "$FRONTEND_URL" ]; then
-    echo "❌ Missing required environment variables!"
-    echo "Please set: MONGODB_URI, JWT_SECRET, FRONTEND_URL"
-    exit 1
+# Step 1: Load environment variables
+if [ ! -f .env ]; then
+  echo "❌ .env file not found. Aborting."
+  exit 1
 fi
 
-# Backend deployment
-echo "📦 Building backend..."
-cd backend
-npm ci --only=production
-npm run build:production
+export $(grep -v '^#' .env | xargs)
 
-echo "🧪 Running production health check..."
-npm run health:check &
-HEALTH_PID=$!
-sleep 3
-kill $HEALTH_PID || true
+# Step 2: Pull latest code (optional if repo already cloned)
+# git pull origin main
 
-# Frontend deployment
-echo "📦 Building frontend..."
-cd ../frontend
-npm ci --only=production
-npm run build:production
+# Step 3: Stop existing containers (if any)
+echo "🛑 Stopping any running containers..."
+docker compose -f docker-compose.production.yml down
 
-echo "✅ Production build completed successfully!"
-echo "📂 Backend build: ./backend/dist/"
-echo "📂 Frontend build: ./frontend/dist/"
-echo ""
-echo "Next steps:"
-echo "1. Deploy backend/dist/ to your server"
-echo "2. Deploy frontend/dist/ to your static hosting"
-echo "3. Set up your environment variables on the server"
-echo "4. Start the backend with: npm run start:production"
+# Step 4: Clean up unused Docker resources (optional)
+echo "🧹 Cleaning up dangling containers/images..."
+docker system prune -f
+
+# Step 5: Build and start containers
+echo "🏗️  Building and starting Docker containers..."
+docker compose --env-file .env -f docker-compose.production.yml up -d --build
+
+# Step 6: Show running containers
+echo "📦 Currently running containers:"
+docker ps
+
+# Step 7: Check backend health
+echo "🔍 Checking backend health endpoint..."
+sleep 5
+curl http://localhost:5000/health || echo "⚠️  Backend health check failed"
+
+echo "✅ Deployment completed."

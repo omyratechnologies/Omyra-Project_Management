@@ -1,6 +1,14 @@
 version: '3.8'
 
 services:
+  mongodb:
+    image: mongo:6
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    restart: unless-stopped
+
   backend:
     build:
       context: ./backend
@@ -9,7 +17,7 @@ services:
       - "5000:5000"
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=${MONGODB_URI}
+      - MONGODB_URI=mongodb://mongodb:27017/omyra-project
       - JWT_SECRET=${JWT_SECRET}
       - FRONTEND_URL=${FRONTEND_URL}
       - EMAIL_HOST=${EMAIL_HOST}
@@ -17,6 +25,8 @@ services:
       - EMAIL_USER=${EMAIL_USER}
       - EMAIL_PASSWORD=${EMAIL_PASSWORD}
       - EMAIL_FROM=${EMAIL_FROM}
+    depends_on:
+      - mongodb
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
@@ -47,3 +57,6 @@ services:
       - frontend
       - backend
     restart: unless-stopped
+
+volumes:
+  mongodb_data:
