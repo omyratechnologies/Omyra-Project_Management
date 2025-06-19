@@ -45,13 +45,15 @@ services:
       - backend
     restart: unless-stopped
 
-  # Nginx reverse proxy
+  # Nginx reverse proxy with SSL
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
+      - "443:443"
     volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/nginx-ssl.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl/certs:/etc/ssl/certs:ro
       # Remove default config that conflicts
       - /dev/null:/etc/nginx/conf.d/default.conf
     depends_on:

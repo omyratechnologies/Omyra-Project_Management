@@ -7,11 +7,25 @@ This guide will help you deploy your Omyra Project Management System to producti
 ### 1. Environment Setup
 - [ ] Production MongoDB database ready (MongoDB Atlas recommended)
 - [ ] Domain name configured with DNS pointing to your server
-- [ ] SSL certificate obtained (Let's Encrypt recommended)
+- [ ] SSL certificate obtained (Let's Encrypt recommended) **✨ Now automated!**
 - [ ] Email service provider configured (SendGrid, AWS SES, or Gmail)
 - [ ] Server with Node.js 18+ installed
+- [ ] Docker and Docker Compose installed
 
-### 2. Security Configuration
+### 2. SSL Certificate Setup
+**Option 1: Let's Encrypt (Recommended for Production)**
+```bash
+# Set up Let's Encrypt SSL certificates (requires sudo)
+sudo ./setup-letsencrypt.sh yourdomain.com admin@yourdomain.com
+```
+
+**Option 2: Self-signed (Development/Testing)**
+```bash
+# Generate self-signed certificates
+./generate-ssl-certs.sh
+```
+
+### 3. Security Configuration
 - [ ] Strong JWT secret generated (256-bit recommended)
 - [ ] Environment variables configured
 - [ ] Firewall configured (ports 80, 443, and your backend port)
